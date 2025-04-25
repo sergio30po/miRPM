@@ -1,8 +1,13 @@
 Package: miRPM
-Title: Un paquete para análisis de matrices de conteo
+Title: miRNA RPM Normalization
 Version: 0.1.0
-Authors@R: person("Sergio", "Pérez", email = "sergio30po@gmail.com", role = c("aut", "cre"))
-Description: Este paquete proporciona funciones para el análisis estadístico de matrices de conteo en estudios de miRNAs.
+Authors@R: 
+    person("Sergio", "Pérez", 
+           email = "sergio30po@gmail.com", 
+           role = c("aut", "cre"))
+Description: 
+    This package provides functions for statistical analysis of count matrices 
+    in miRNA studies and their normalization using reads per million (RPM).
 Depends: R (>= 4.0)
 License: MIT
 Encoding: UTF-8
