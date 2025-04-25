@@ -1,0 +1,10 @@
+Package: miRPM
+Title: Un paquete para análisis de matrices de conteo
+Version: 0.1.0
+Authors@R: person("Sergio", "Pérez", email = "sergio30po@gmail.com", role = c("aut", "cre"))
+Description: Este paquete proporciona funciones para el análisis estadístico de matrices de conteo en estudios de miRNAs.
+Depends: R (>= 4.0)
+License: MIT
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
