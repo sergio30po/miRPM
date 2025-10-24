@@ -1,0 +1,42 @@
+url: https://sergio30po.github.io/miRPM
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    pkgdown-nav-height: 70px
+
+home:
+  title: miRPM
+  description: >
+    Tools for normalization and analysis of miRNA-seq count data using
+    reads per million (RPM). The package provides lightweight and
+    reproducible workflows for exploring, filtering, and normalizing
+    miRNA-seq count matrices.
+  readme: TRUE   # 👈 This line tells pkgdown to use your README.md as homepage
+
+authors:
+  Sergio Pérez Oliveira:
+    roles: [aut, cre]
+    orcid: 0000-0002-3292-0501
+    email: sergio30po@gmail.com
+  Manuel Fernández Sanjurjo:
+    roles: [aut]
+    orcid: 0000-0003-4687-3379
+  Eduardo Iglesias Gutierrez:
+    roles: [aut]
+    orcid: 0000-0002-3292-0501
+
+navbar:
+  structure:
+    left: [home, reference, articles]
+    right: [search, github]
+  right:
+    - icon: github
+      aria-label: "GitHub repository"
+      href: https://github.com/sergio30po/miRPM
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
