@@ -78,5 +78,5 @@ You can install the development version directly from GitHub using
 remotes::install_github("sergio30po/miRPM")
 ```
 
-Please refer to the [documentation page](https://sergio30po.github.io/miRPM/index.html)
+Please refer to the [documentation page](https://sergio30po.github.io/miRPM)
 for detailed function references.
