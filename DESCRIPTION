@@ -13,7 +13,7 @@ Authors@R: c(
     person("Eduardo", "Iglesias Gutierrez",
            email = "iglesiaseduardo@uniovi.es",
            role = "aut",
-           comment = c(ORCID = "0000-0002-3292-0501"))
+           comment = c(ORCID = "0000-0002-3063-1562"))
  )
 Description: Lightweight tools to explore, normalize, and analyze miRNA-seq count
     matrices using reads per million (RPM) normalization.

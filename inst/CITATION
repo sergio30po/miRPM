@@ -9,7 +9,7 @@ citEntry(
     person(given = "Manuel", family = "Fernández Sanjurjo",
            comment = c(ORCID = "0000-0003-4687-3379")),
     person(given = "Eduardo", family = "Iglesias Gutierrez",
-           comment = c(ORCID = "0000-0002-3292-0501"))
+           comment = c(ORCID = "0000-0002-3063-1562"))
   ),
   year  = "2025",
   note  = "R package version 0.1.0",
