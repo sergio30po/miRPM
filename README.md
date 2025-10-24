@@ -78,4 +78,6 @@ You can install the development version directly from GitHub using
 remotes::install_github("sergio30po/miRPM")
 ```
 
-Please refer to the documentation page for detailed function references.
+Please refer to the [documentation
+page](file:///C:/Users/Sergio/Desktop/HUCA%20LABORATORIO/Bioinform%C3%A1tica/Paquetes/miRPM/docs/index.html)
+for detailed function references.
