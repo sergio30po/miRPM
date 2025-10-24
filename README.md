@@ -79,5 +79,5 @@ remotes::install_github("sergio30po/miRPM")
 ```
 
 Please refer to the [documentation
-page](file:///C:/Users/Sergio/Desktop/HUCA%20LABORATORIO/Bioinform%C3%A1tica/Paquetes/miRPM/docs/index.html)
+page](https://sergio30po.github.io/miRPM/)
 for detailed function references.
