@@ -1,10 +1,6 @@
 miRPM: miRNA RPM Normalization
 ================
 
-# miRPM
-
-------------------------------------------------------------------------
-
 ## Overview
 
 **miRPM** is a lightweight R package for **normalization and analysis of
