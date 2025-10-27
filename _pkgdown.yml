@@ -1,3 +1,14 @@
 url: ~
 template:
   bootstrap: 5
+
+navbar:
+  structure:
+    left:
+      - home
+      - reference
+      - license
+  components:
+    license:
+      text: "License"
+      href: LICENSE.html

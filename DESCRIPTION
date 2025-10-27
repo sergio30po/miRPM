@@ -18,7 +18,7 @@ Authors@R: c(
 Description: Lightweight tools to explore, normalize, and analyze miRNA-seq count
     matrices using reads per million (RPM) normalization.
 Depends: R (>= 4.0)
-License: MIT + file LICENSE
+License: MIT License
 URL: https://sergio30po.github.io/miRPM, https://github.com/sergio30po/miRPM
 BugReports: https://github.com/sergio30po/miRPM/issues
 Encoding: UTF-8
