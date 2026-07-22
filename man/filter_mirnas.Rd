@@ -34,8 +34,26 @@ This function filters miRNAs that have reads in at least a specified percentage 
 The comparison operator for both the threshold and the read count can be customized (>, >=, <, <=).
 }
 \examples{
-# Example usage:
-# count_matrix <- matrix(c(1000, 0, 2000, 1500, 0, 3000), nrow = 2, dimnames = list(c("miRNA1", "miRNA2"), c("Sample1", "Sample2", "Sample3")))
-# metadata <- data.frame(Sample = c("Sample1", "Sample2", "Sample3"), Condition = c("A", "A", "B"))
-# filtered_matrix <- filter_mirnas(count_matrix, metadata, threshold = 0.5, min_reads = 1000, threshold_comparison = ">=", read_comparison = ">")
+count_matrix <- matrix(
+  c(1000, 0, 2000, 1500, 0, 3000),
+  nrow = 2,
+  dimnames = list(
+    c("miRNA1", "miRNA2"),
+    c("Sample1", "Sample2", "Sample3")
+  )
+)
+
+metadata <- data.frame(
+  Sample = c("Sample1", "Sample2", "Sample3"),
+  Condition = c("A", "A", "B")
+)
+
+filtered_matrix <- filter_mirnas(
+  count_matrix = count_matrix,
+  metadata = metadata,
+  threshold = 0.5,
+  min_reads = 1000,
+  threshold_comparison = ">=",
+  read_comparison = ">"
+)
 }

@@ -21,8 +21,23 @@ This function normalizes a count matrix to Reads Per Million (RPM) using the tot
 The resulting matrix is rounded to 2 decimal places and avoids scientific notation.
 }
 \examples{
-# Example usage:
-# count_matrix <- matrix(c(100, 200, 300, 400), nrow = 2, dimnames = list(c("Gene1", "Gene2"), c("Sample1", "Sample2")))
-# metrics <- data.frame(Sample = c("Sample1", "Sample2"), TotalReads = c(1000, 2000))
-# rpm_matrix <- normalize_rpm(count_matrix, metrics, "TotalReads")
+count_matrix <- matrix(
+  c(100, 200, 300, 400),
+  nrow = 2,
+  dimnames = list(
+    c("Gene1", "Gene2"),
+    c("Sample1", "Sample2")
+  )
+)
+
+metrics <- data.frame(
+  Sample = c("Sample1", "Sample2"),
+  TotalReads = c(1000, 2000)
+)
+
+rpm_matrix <- normalize_rpm(
+  count_matrix = count_matrix,
+  metrics = metrics,
+  reads_column = "TotalReads"
+)
 }

@@ -12,10 +12,28 @@
 #' @return A filtered count matrix containing miRNAs that meet the criteria in at least one group.
 #' @export
 #' @examples
-#' # Example usage:
-#' # count_matrix <- matrix(c(1000, 0, 2000, 1500, 0, 3000), nrow = 2, dimnames = list(c("miRNA1", "miRNA2"), c("Sample1", "Sample2", "Sample3")))
-#' # metadata <- data.frame(Sample = c("Sample1", "Sample2", "Sample3"), Condition = c("A", "A", "B"))
-#' # filtered_matrix <- filter_mirnas(count_matrix, metadata, threshold = 0.5, min_reads = 1000, threshold_comparison = ">=", read_comparison = ">")
+#' count_matrix <- matrix(
+#'   c(1000, 0, 2000, 1500, 0, 3000),
+#'   nrow = 2,
+#'   dimnames = list(
+#'     c("miRNA1", "miRNA2"),
+#'     c("Sample1", "Sample2", "Sample3")
+#'   )
+#' )
+#'
+#' metadata <- data.frame(
+#'   Sample = c("Sample1", "Sample2", "Sample3"),
+#'   Condition = c("A", "A", "B")
+#' )
+#'
+#' filtered_matrix <- filter_mirnas(
+#'   count_matrix = count_matrix,
+#'   metadata = metadata,
+#'   threshold = 0.5,
+#'   min_reads = 1000,
+#'   threshold_comparison = ">=",
+#'   read_comparison = ">"
+#' )
 filter_mirnas <- function(count_matrix, metadata, threshold = 0.5, min_reads = 1000, threshold_comparison = ">=", read_comparison = ">") {
   # Check if the number of samples in count_matrix matches the number of rows in metadata
   if (ncol(count_matrix) != nrow(metadata)) {
