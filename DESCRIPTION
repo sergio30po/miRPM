@@ -1,6 +1,6 @@
 Package: miRPM
 Title: miRNA RPM Normalization
-Version: 0.1.0
+Version: 0.1.0.9000
 Authors@R: c(
     person("Sergio", "Pérez Oliveira",
            email = "sergio30po@gmail.com",
