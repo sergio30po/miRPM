@@ -31,5 +31,6 @@ Imports:
     htmlwidgets,
     openxlsx,
     plotly,
+    rlang,
     tibble,
     tidyr

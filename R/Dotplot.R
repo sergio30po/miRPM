@@ -40,71 +40,116 @@
 #' output$output_folder
 #' }
 
-miRNA_expression_plot <- function(miRNAs_DE, miRNA_ftd, metadata, condition_column, groups, colors, output_name, plot_title = "miRNA Expression Plot") {
-  library(ggplot2)
-  library(tidyr)
-  library(dplyr)
-  library(tibble)
-  library(plotly)
-  library(htmlwidgets)
-
-  # Create "Interactive_plots" folder if it doesn't exist
+miRNA_expression_plot <- function(
+    miRNAs_DE,
+    miRNA_ftd,
+    metadata,
+    condition_column,
+    groups,
+    colors,
+    output_name,
+    plot_title = "miRNA Expression Plot"
+) {
   output_folder <- "Interactive_plots"
+
   if (!dir.exists(output_folder)) {
-    dir.create(output_folder)
+    dir.create(output_folder, recursive = TRUE)
   }
 
-  # Load differentially expressed miRNAs from the dataframe
-  miRNAs_DE <- miRNAs_DE %>% pull(1)  # Assuming miRNAs are in the first column
+  miRNAs_DE <- miRNAs_DE[[1]]
 
-  # Filter count matrix for selected miRNAs
-  df_long <- miRNA_ftd %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "miRNA") %>%
-    filter(miRNA %in% miRNAs_DE) %>%
-    pivot_longer(cols = -miRNA, names_to = "Sample", values_to = "RPM")
+  df_long <- as.data.frame(miRNA_ftd)
+  df_long <- tibble::rownames_to_column(df_long, var = "miRNA")
 
-  # Merge with metadata
-  df_long <- df_long %>% left_join(metadata, by = "Sample")
+  df_long <- dplyr::filter(
+    df_long,
+    rlang::.data$miRNA %in% miRNAs_DE
+  )
 
-  # Ensure only selected groups are included
-  df_long <- df_long %>% filter(.data[[condition_column]] %in% groups)
+  df_long <- tidyr::pivot_longer(
+    df_long,
+    cols = -1,
+    names_to = "Sample",
+    values_to = "RPM"
+  )
 
-  # Generate ggplot
-  p <- ggplot(df_long, aes(x = miRNA, y = RPM, color = .data[[condition_column]],
-                           text = paste("Sample:", Sample,
-                                        "<br>miRNA:", miRNA,
-                                        "<br>RPM:", round(RPM, 2),
-                                        "<br>Condition:", .data[[condition_column]],
-                                        "<br>Pathology:", Pathology,
-                                        "<br>Gender:", Gender,
-                                        "<br>Onset age:", Onset_age,
-                                        "<br>Age at death:", Death_age,
-                                        "<br>Braak:", Braak_stage,
-                                        "<br>APOE:", APOE,
-                                        "<br>Disease duration:", Disease_duration,
-                                        "<br>HTT short allele:", HTT_short_allele,
-                                        "<br>HTT long allele:", HTT_long_allele))) +
-    geom_point(alpha = 0.7, position = position_dodge(width = 0.3)) +
-    labs(
-      title = plot_title,  # Add title here
+  df_long <- dplyr::left_join(
+    df_long,
+    metadata,
+    by = "Sample"
+  )
+
+  df_long <- dplyr::filter(
+    df_long,
+    df_long[[condition_column]] %in% groups
+  )
+
+  p <- ggplot2::ggplot(
+    df_long,
+    ggplot2::aes(
+      x = rlang::.data$miRNA,
+      y = rlang::.data$RPM,
+      color = rlang::.data[[condition_column]],
+      text = paste(
+        "Sample:", rlang::.data$Sample,
+        "<br>miRNA:", rlang::.data$miRNA,
+        "<br>RPM:", round(rlang::.data$RPM, 2),
+        "<br>Condition:", rlang::.data[[condition_column]],
+        "<br>Pathology:", rlang::.data$Pathology,
+        "<br>Gender:", rlang::.data$Gender,
+        "<br>Onset age:", rlang::.data$Onset_age,
+        "<br>Age at death:", rlang::.data$Death_age,
+        "<br>Braak:", rlang::.data$Braak_stage,
+        "<br>APOE:", rlang::.data$APOE,
+        "<br>Disease duration:", rlang::.data$Disease_duration,
+        "<br>HTT short allele:", rlang::.data$HTT_short_allele,
+        "<br>HTT long allele:", rlang::.data$HTT_long_allele
+      )
+    )
+  ) +
+    ggplot2::geom_point(
+      alpha = 0.7,
+      position = ggplot2::position_dodge(width = 0.3)
+    ) +
+    ggplot2::labs(
+      title = plot_title,
       x = "miRNAs",
       y = "RPM per sample",
       color = condition_column
     ) +
-    scale_color_manual(values = colors) +
-    theme_minimal() +
-    theme(
-      axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-      plot.title = element_text(hjust = 0.5, face = "bold", size = 14)  # Customize title appearance
+    ggplot2::scale_color_manual(values = colors) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(
+        angle = 90,
+        hjust = 1,
+        vjust = 0.5
+      ),
+      plot.title = ggplot2::element_text(
+        hjust = 0.5,
+        face = "bold",
+        size = 14
+      )
     )
 
-  # Convert to interactive plotly plot
-  interactive_plot <- ggplotly(p, tooltip = "text")
+  interactive_plot <- plotly::ggplotly(
+    p,
+    tooltip = "text"
+  )
 
-  # Save interactive plot in the "Interactive_plots" folder
-  output_file <- file.path(output_folder, paste0(output_name, ".html"))
-  saveWidget(interactive_plot, file = output_file)
+  output_file <- file.path(
+    output_folder,
+    paste0(output_name, ".html")
+  )
 
-  return(list(ggplot = p, interactive = interactive_plot, output_folder = output_folder))
+  htmlwidgets::saveWidget(
+    interactive_plot,
+    file = output_file
+  )
+
+  list(
+    ggplot = p,
+    interactive = interactive_plot,
+    output_folder = output_folder
+  )
 }
