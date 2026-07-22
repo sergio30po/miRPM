@@ -2,34 +2,73 @@
 % Please edit documentation in R/Statistical_tests.R
 \name{perform_statistical_tests}
 \alias{perform_statistical_tests}
-\title{Perform Statistical Tests on miRNA Expression Data}
+\title{Perform statistical tests on miRNA expression data}
 \usage{
-perform_statistical_tests(miRNA_ftd, metadata, condition, output_file)
+perform_statistical_tests(
+  miRNA_ftd,
+  metadata,
+  condition,
+  output_file,
+  assign_results = TRUE
+)
 }
 \arguments{
-\item{miRNA_ftd}{A count matrix of miRNA expression data (miRNAs in rows, samples in columns).}
+\item{miRNA_ftd}{A numeric matrix or data frame with miRNAs in rows
+and samples in columns.}
 
-\item{metadata}{A dataframe containing sample information, including the condition to test.}
+\item{metadata}{A data frame containing sample information. It must
+include a column named `"Sample"`.}
 
-\item{condition}{The name of the column in `metadata` that defines the groups to compare.}
+\item{condition}{Character string naming the metadata column that
+defines the comparison groups.}
 
-\item{output_file}{The name of the output Excel file (e.g., "Results.xlsx").}
+\item{output_file}{Character string naming the output Excel file.}
+
+\item{assign_results}{Logical. If `TRUE`, result objects are also
+assigned to the calling environment for backward compatibility.
+Default is `TRUE`.}
 }
 \value{
-An Excel file with statistical results. For Kruskal-Wallis, it includes a sheet for the global test and sheets for Dunn's post hoc comparisons. For Mann-Whitney, it includes a single sheet with the test results. Each sheet will have a column titled "Significance" showing the corresponding symbol (`*`, `**`, or `***`).
-
-A dataframe for each comparison.
-
-The path to the output folder ("Tests_results").
+A list containing:
+\itemize{
+  \item `comparison_results`: data frames with statistical results.
+  \item `output_folder`: directory where the workbook was saved.
+}
 }
 \description{
-This function performs statistical tests on miRNA expression data based on the number of groups in the specified condition.
-For two groups, it performs the Mann-Whitney U test. For three or more groups, it performs the Kruskal-Wallis test followed by Dunn's post hoc test.
-Results are saved in an Excel file inside the "Tests_results" folder with separate sheets for each comparison. Each sheet will also include a column indicating the significance of the results using symbols: `*` for p-value < 0.05, `**` for p-value < 0.01, and `***` for p-value < 0.005.
+Performs non-parametric statistical tests according to the number of
+groups defined in the metadata.
+}
+\details{
+For two groups, the function performs a Mann-Whitney-Wilcoxon test.
+For three or more groups, it performs a Kruskal-Wallis test followed
+by Dunn's post hoc tests for significant miRNAs.
+
+Results are adjusted for multiple comparisons using the
+Benjamini-Hochberg false discovery rate method and are exported to
+an Excel workbook.
 }
 \examples{
-# Example usage:
-# miRNA_ftd <- matrix(c(10, 20, 30, 40, 50, 60), nrow = 2, dimnames = list(c("miRNA1", "miRNA2"), c("Sample1", "Sample2", "Sample3")))
-# metadata <- data.frame(Sample = c("Sample1", "Sample2", "Sample3"), Condition = c("A", "A", "B"))
-# perform_statistical_tests(miRNA_ftd, metadata, "Condition", "Test_Results.xlsx")
+\dontrun{
+counts <- matrix(
+  c(10, 20, 30, 40, 50, 60),
+  nrow = 2,
+  dimnames = list(
+    c("miRNA1", "miRNA2"),
+    c("Sample1", "Sample2", "Sample3")
+  )
+)
+
+metadata <- data.frame(
+  Sample = c("Sample1", "Sample2", "Sample3"),
+  Condition = c("Control", "Control", "Disease")
+)
+
+perform_statistical_tests(
+  miRNA_ftd = counts,
+  metadata = metadata,
+  condition = "Condition",
+  output_file = "Test_results.xlsx"
+)
+}
 }

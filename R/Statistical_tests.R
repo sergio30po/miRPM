@@ -1,92 +1,254 @@
-#' Perform Statistical Tests on miRNA Expression Data
+#' Perform statistical tests on miRNA expression data
 #'
-#' This function performs statistical tests on miRNA expression data based on the number of groups in the specified condition.
-#' For two groups, it performs the Mann-Whitney U test. For three or more groups, it performs the Kruskal-Wallis test followed by Dunn's post hoc test.
-#' Results are saved in an Excel file inside the "Tests_results" folder with separate sheets for each comparison. Each sheet will also include a column indicating the significance of the results using symbols: `*` for p-value < 0.05, `**` for p-value < 0.01, and `***` for p-value < 0.005.
+#' Performs non-parametric statistical tests according to the number of
+#' groups defined in the metadata.
 #'
-#' @param miRNA_ftd A count matrix of miRNA expression data (miRNAs in rows, samples in columns).
-#' @param metadata A dataframe containing sample information, including the condition to test.
-#' @param condition The name of the column in `metadata` that defines the groups to compare.
-#' @param output_file The name of the output Excel file (e.g., "Results.xlsx").
-#' @return An Excel file with statistical results. For Kruskal-Wallis, it includes a sheet for the global test and sheets for Dunn's post hoc comparisons. For Mann-Whitney, it includes a single sheet with the test results. Each sheet will have a column titled "Significance" showing the corresponding symbol (`*`, `**`, or `***`).
-#' @return A dataframe for each comparison.
-#' @return The path to the output folder ("Tests_results").
+#' For two groups, the function performs a Mann-Whitney-Wilcoxon test.
+#' For three or more groups, it performs a Kruskal-Wallis test followed
+#' by Dunn's post hoc tests for significant miRNAs.
+#'
+#' Results are adjusted for multiple comparisons using the
+#' Benjamini-Hochberg false discovery rate method and are exported to
+#' an Excel workbook.
+#'
+#' @param miRNA_ftd A numeric matrix or data frame with miRNAs in rows
+#'   and samples in columns.
+#' @param metadata A data frame containing sample information. It must
+#'   include a column named `"Sample"`.
+#' @param condition Character string naming the metadata column that
+#'   defines the comparison groups.
+#' @param output_file Character string naming the output Excel file.
+#' @param assign_results Logical. If `TRUE`, result objects are also
+#'   assigned to the calling environment for backward compatibility.
+#'   Default is `TRUE`.
+#'
+#' @return A list containing:
+#' \itemize{
+#'   \item `comparison_results`: data frames with statistical results.
+#'   \item `output_folder`: directory where the workbook was saved.
+#' }
+#'
 #' @export
+#'
 #' @examples
-#' # Example usage:
-#' # miRNA_ftd <- matrix(c(10, 20, 30, 40, 50, 60), nrow = 2, dimnames = list(c("miRNA1", "miRNA2"), c("Sample1", "Sample2", "Sample3")))
-#' # metadata <- data.frame(Sample = c("Sample1", "Sample2", "Sample3"), Condition = c("A", "A", "B"))
-#' # perform_statistical_tests(miRNA_ftd, metadata, "Condition", "Test_Results.xlsx")
-
+#' \dontrun{
+#' counts <- matrix(
+#'   c(10, 20, 30, 40, 50, 60),
+#'   nrow = 2,
+#'   dimnames = list(
+#'     c("miRNA1", "miRNA2"),
+#'     c("Sample1", "Sample2", "Sample3")
+#'   )
+#' )
+#'
+#' metadata <- data.frame(
+#'   Sample = c("Sample1", "Sample2", "Sample3"),
+#'   Condition = c("Control", "Control", "Disease")
+#' )
+#'
+#' perform_statistical_tests(
+#'   miRNA_ftd = counts,
+#'   metadata = metadata,
+#'   condition = "Condition",
+#'   output_file = "Test_results.xlsx"
+#' )
+#' }
 perform_statistical_tests <- function(
     miRNA_ftd,
     metadata,
     condition,
-    output_file
+    output_file,
+    assign_results = TRUE
 ) {
-  results_dir <- "Tests_results"
+  caller_env <- parent.frame()
 
-  if (!dir.exists(results_dir)) {
-    dir.create(results_dir, recursive = TRUE)
+  if (!is.matrix(miRNA_ftd) && !is.data.frame(miRNA_ftd)) {
+    stop(
+      "`miRNA_ftd` must be a matrix or data frame.",
+      call. = FALSE
+    )
   }
 
-  df_long <- as.data.frame(miRNA_ftd)
+  rpm_matrix <- as.matrix(miRNA_ftd)
 
-  df_long <- tibble::rownames_to_column(
-    df_long,
-    var = "miRNA"
-  )
+  if (!is.numeric(rpm_matrix)) {
+    stop(
+      "`miRNA_ftd` must contain numeric expression values.",
+      call. = FALSE
+    )
+  }
 
-  df_long <- tidyr::pivot_longer(
-    df_long,
-    cols = -1,
-    names_to = "Sample",
-    values_to = "RPM"
-  )
+  if (is.null(rownames(rpm_matrix))) {
+    stop(
+      "`miRNA_ftd` must have miRNA names as row names.",
+      call. = FALSE
+    )
+  }
 
-  df_long <- dplyr::left_join(
-    df_long,
-    metadata,
-    by = "Sample"
-  )
+  if (is.null(colnames(rpm_matrix))) {
+    stop(
+      "`miRNA_ftd` must have sample names as column names.",
+      call. = FALSE
+    )
+  }
 
-  if (!condition %in% colnames(df_long)) {
+  if (anyNA(rpm_matrix)) {
+    stop(
+      "`miRNA_ftd` cannot contain missing values.",
+      call. = FALSE
+    )
+  }
+
+  if (!is.data.frame(metadata)) {
+    stop(
+      "`metadata` must be a data frame.",
+      call. = FALSE
+    )
+  }
+
+  if (!"Sample" %in% colnames(metadata)) {
+    stop(
+      "`metadata` must contain a column named `Sample`.",
+      call. = FALSE
+    )
+  }
+
+  if (!condition %in% colnames(metadata)) {
     stop(
       "The condition column was not found in `metadata`.",
       call. = FALSE
     )
   }
 
+  if (anyDuplicated(metadata$Sample)) {
+    stop(
+      "`metadata$Sample` contains duplicated sample identifiers.",
+      call. = FALSE
+    )
+  }
+
+  missing_samples <- setdiff(
+    colnames(rpm_matrix),
+    metadata$Sample
+  )
+
+  if (length(missing_samples) > 0) {
+    stop(
+      "Samples missing from `metadata`: ",
+      paste(missing_samples, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  results_dir <- "Tests_results"
+
+  if (!dir.exists(results_dir)) {
+    dir.create(
+      results_dir,
+      recursive = TRUE
+    )
+  }
+
+  df_long <- data.frame(
+    miRNA = rep(
+      rownames(rpm_matrix),
+      times = ncol(rpm_matrix)
+    ),
+    Sample = rep(
+      colnames(rpm_matrix),
+      each = nrow(rpm_matrix)
+    ),
+    RPM = as.vector(rpm_matrix),
+    stringsAsFactors = FALSE
+  )
+
+  metadata_index <- match(
+    df_long$Sample,
+    metadata$Sample
+  )
+
+  metadata_columns <- setdiff(
+    colnames(metadata),
+    "Sample"
+  )
+
+  df_long <- cbind(
+    df_long,
+    metadata[
+      metadata_index,
+      metadata_columns,
+      drop = FALSE
+    ]
+  )
+
   df_long$Condition <- df_long[[condition]]
 
-  num_groups <- length(unique(df_long$Condition))
+  if (anyNA(df_long$Condition)) {
+    stop(
+      "The condition column contains missing values.",
+      call. = FALSE
+    )
+  }
+
+  groups <- unique(df_long$Condition)
+  num_groups <- length(groups)
+
+  if (num_groups < 2) {
+    stop(
+      "The condition must contain at least two groups.",
+      call. = FALSE
+    )
+  }
 
   wb <- openxlsx::createWorkbook()
   comparison_results_list <- list()
 
   add_significance_symbol <- function(p_value) {
-    if (p_value < 0.005) {
-      "***"
-    } else if (p_value < 0.01) {
-      "**"
-    } else if (p_value < 0.05) {
-      "*"
-    } else {
-      ""
+    if (is.na(p_value)) {
+      return("")
     }
+
+    if (p_value < 0.005) {
+      return("***")
+    }
+
+    if (p_value < 0.01) {
+      return("**")
+    }
+
+    if (p_value < 0.05) {
+      return("*")
+    }
+
+    ""
   }
 
+  miRNA_names <- unique(df_long$miRNA)
+
   if (num_groups > 2) {
-    results_kruskal <- dplyr::summarise(
-      dplyr::group_by(
-        df_long,
-        rlang::.data$miRNA
-      ),
-      p_value = stats::kruskal.test(
-        rlang::.data$RPM,
-        rlang::.data$Condition
-      )$p.value,
-      .groups = "drop"
+    kruskal_pvalues <- vapply(
+      miRNA_names,
+      function(current_miRNA) {
+        current_data <- df_long[
+          df_long$miRNA == current_miRNA,
+          ,
+          drop = FALSE
+        ]
+
+        test_result <- stats::kruskal.test(
+          current_data$RPM,
+          current_data$Condition
+        )
+
+        test_result$p.value
+      },
+      numeric(1)
+    )
+
+    results_kruskal <- data.frame(
+      miRNA = miRNA_names,
+      p_value = kruskal_pvalues,
+      stringsAsFactors = FALSE
     )
 
     results_kruskal$FDR <- stats::p.adjust(
@@ -94,17 +256,18 @@ perform_statistical_tests <- function(
       method = "fdr"
     )
 
-    results_kruskal_sig <- results_kruskal[
-      results_kruskal$FDR < 0.05,
-      ,
-      drop = FALSE
-    ]
-
-    results_kruskal_sig$Significance <- vapply(
-      results_kruskal_sig$p_value,
+    results_kruskal$Significance <- vapply(
+      results_kruskal$p_value,
       add_significance_symbol,
       character(1)
     )
+
+    results_kruskal_sig <- results_kruskal[
+      !is.na(results_kruskal$FDR) &
+        results_kruskal$FDR < 0.05,
+      ,
+      drop = FALSE
+    ]
 
     openxlsx::addWorksheet(
       wb,
@@ -117,33 +280,36 @@ perform_statistical_tests <- function(
       results_kruskal_sig
     )
 
-    assign(
-      "kruskal_wallis_results",
-      results_kruskal_sig,
-      envir = .GlobalEnv
-    )
-
     comparison_results_list[["Kruskal_Wallis"]] <-
       results_kruskal_sig
+
+    if (isTRUE(assign_results)) {
+      assign(
+        "kruskal_wallis_results",
+        results_kruskal_sig,
+        envir = caller_env
+      )
+    }
 
     results_dunn <- data.frame(
       miRNA = character(),
       comparison = character(),
       Z = numeric(),
       p_value = numeric(),
+      Significance = character(),
       stringsAsFactors = FALSE
     )
 
     for (current_miRNA in results_kruskal_sig$miRNA) {
-      data_miRNA <- df_long[
+      current_data <- df_long[
         df_long$miRNA == current_miRNA,
         ,
         drop = FALSE
       ]
 
       dunn_result <- dunn.test::dunn.test(
-        data_miRNA$RPM,
-        data_miRNA$Condition,
+        current_data$RPM,
+        current_data$Condition,
         method = "bh"
       )
 
@@ -170,12 +336,9 @@ perform_statistical_tests <- function(
       )
     }
 
-    results_dunn$p_value <- as.numeric(
-      results_dunn$p_value
-    )
-
     results_dunn_filtered <- results_dunn[
-      results_dunn$p_value < 0.05,
+      !is.na(results_dunn$p_value) &
+        results_dunn$p_value < 0.05,
       ,
       drop = FALSE
     ]
@@ -191,46 +354,76 @@ perform_statistical_tests <- function(
         drop = FALSE
       ]
 
-      if (nrow(subset_comparison) > 0) {
-        openxlsx::addWorksheet(
-          wb,
-          comparison_name
-        )
+      sheet_name <- gsub(
+        "[:\\\\/?*\\[\\]]",
+        "_",
+        comparison_name
+      )
 
-        openxlsx::writeData(
-          wb,
-          comparison_name,
-          subset_comparison
+      sheet_name <- substr(
+        sheet_name,
+        1,
+        31
+      )
+
+      openxlsx::addWorksheet(
+        wb,
+        sheet_name
+      )
+
+      openxlsx::writeData(
+        wb,
+        sheet_name,
+        subset_comparison
+      )
+
+      comparison_results_list[[comparison_name]] <-
+        subset_comparison
+
+      if (isTRUE(assign_results)) {
+        object_name <- paste0(
+          "dunn_test_",
+          gsub(
+            " - ",
+            "_vs_",
+            comparison_name,
+            fixed = TRUE
+          )
         )
 
         assign(
-          paste0(
-            "dunn_test_",
-            gsub(
-              " - ",
-              "_vs_",
-              comparison_name
-            )
-          ),
+          object_name,
           subset_comparison,
-          envir = .GlobalEnv
+          envir = caller_env
         )
-
-        comparison_results_list[[comparison_name]] <-
-          subset_comparison
       }
     }
-  } else if (num_groups == 2) {
-    results_mann_whitney <- dplyr::summarise(
-      dplyr::group_by(
-        df_long,
-        rlang::.data$miRNA
-      ),
-      p_value = stats::wilcox.test(
-        rlang::.data$RPM,
-        rlang::.data$Condition
-      )$p.value,
-      .groups = "drop"
+  } else {
+    mann_whitney_pvalues <- vapply(
+      miRNA_names,
+      function(current_miRNA) {
+        current_data <- df_long[
+          df_long$miRNA == current_miRNA,
+          ,
+          drop = FALSE
+        ]
+
+        test_result <- suppressWarnings(
+          stats::wilcox.test(
+            RPM ~ Condition,
+            data = current_data
+          )
+        )
+
+        test_result$p.value
+      },
+      numeric(1)
+    )
+
+    results_mann_whitney <- data.frame(
+      miRNA = miRNA_names,
+      p_value = mann_whitney_pvalues,
+      stringsAsFactors = FALSE
     )
 
     results_mann_whitney$FDR <- stats::p.adjust(
@@ -238,17 +431,18 @@ perform_statistical_tests <- function(
       method = "fdr"
     )
 
-    results_mann_whitney_sig <- results_mann_whitney[
-      results_mann_whitney$FDR < 0.05,
-      ,
-      drop = FALSE
-    ]
-
-    results_mann_whitney_sig$Significance <- vapply(
-      results_mann_whitney_sig$p_value,
+    results_mann_whitney$Significance <- vapply(
+      results_mann_whitney$p_value,
       add_significance_symbol,
       character(1)
     )
+
+    results_mann_whitney_sig <- results_mann_whitney[
+      !is.na(results_mann_whitney$FDR) &
+        results_mann_whitney$FDR < 0.05,
+      ,
+      drop = FALSE
+    ]
 
     openxlsx::addWorksheet(
       wb,
@@ -261,19 +455,16 @@ perform_statistical_tests <- function(
       results_mann_whitney_sig
     )
 
-    assign(
-      "mann_whitney_results",
-      results_mann_whitney_sig,
-      envir = .GlobalEnv
-    )
-
     comparison_results_list[["Mann_Whitney"]] <-
       results_mann_whitney_sig
-  } else {
-    stop(
-      "The condition must contain at least two groups.",
-      call. = FALSE
-    )
+
+    if (isTRUE(assign_results)) {
+      assign(
+        "mann_whitney_results",
+        results_mann_whitney_sig,
+        envir = caller_env
+      )
+    }
   }
 
   output_path <- file.path(
