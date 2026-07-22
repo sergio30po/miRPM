@@ -18,126 +18,277 @@
 #' # metadata <- data.frame(Sample = c("Sample1", "Sample2", "Sample3"), Condition = c("A", "A", "B"))
 #' # perform_statistical_tests(miRNA_ftd, metadata, "Condition", "Test_Results.xlsx")
 
-perform_statistical_tests <- function(miRNA_ftd, metadata, condition, output_file) {
-  # Load necessary libraries
-  library(dunn.test)
-  library(tidyverse)
-  library(openxlsx)
-
-  # Ensure "Tests_results" folder exists
+perform_statistical_tests <- function(
+    miRNA_ftd,
+    metadata,
+    condition,
+    output_file
+) {
   results_dir <- "Tests_results"
+
   if (!dir.exists(results_dir)) {
-    dir.create(results_dir)
+    dir.create(results_dir, recursive = TRUE)
   }
 
-  # Convert count matrix to long format
-  df_long <- miRNA_ftd %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "miRNA") %>%
-    pivot_longer(cols = -miRNA, names_to = "Sample", values_to = "RPM") %>%
-    left_join(metadata, by = "Sample")
+  df_long <- as.data.frame(miRNA_ftd)
 
-  # Extract the condition column
+  df_long <- tibble::rownames_to_column(
+    df_long,
+    var = "miRNA"
+  )
+
+  df_long <- tidyr::pivot_longer(
+    df_long,
+    cols = -1,
+    names_to = "Sample",
+    values_to = "RPM"
+  )
+
+  df_long <- dplyr::left_join(
+    df_long,
+    metadata,
+    by = "Sample"
+  )
+
+  if (!condition %in% colnames(df_long)) {
+    stop(
+      "The condition column was not found in `metadata`.",
+      call. = FALSE
+    )
+  }
+
   df_long$Condition <- df_long[[condition]]
 
-  # Number of groups
   num_groups <- length(unique(df_long$Condition))
 
-  # Initialize workbook
-  wb <- createWorkbook()
-
-  # List to store dataframes for comparisons
+  wb <- openxlsx::createWorkbook()
   comparison_results_list <- list()
 
-  # Function to add significance symbols
   add_significance_symbol <- function(p_value) {
-    if (p_value < 0.005) return("***")
-    else if (p_value < 0.01) return("**")
-    else if (p_value < 0.05) return("*")
-    else return("")
+    if (p_value < 0.005) {
+      "***"
+    } else if (p_value < 0.01) {
+      "**"
+    } else if (p_value < 0.05) {
+      "*"
+    } else {
+      ""
+    }
   }
 
   if (num_groups > 2) {
-    # Kruskal-Wallis test
-    results_kruskal <- df_long %>%
-      group_by(miRNA) %>%
-      summarise(p_value = kruskal.test(RPM ~ Condition)$p.value, .groups = "drop")
+    results_kruskal <- dplyr::summarise(
+      dplyr::group_by(
+        df_long,
+        rlang::.data$miRNA
+      ),
+      p_value = stats::kruskal.test(
+        rlang::.data$RPM,
+        rlang::.data$Condition
+      )$p.value,
+      .groups = "drop"
+    )
 
-    results_kruskal$FDR <- p.adjust(results_kruskal$p_value, method = "fdr")
-    results_kruskal_sig <- results_kruskal %>% filter(FDR < 0.05)
-    results_kruskal_sig$Significance <- sapply(results_kruskal_sig$p_value, add_significance_symbol)
+    results_kruskal$FDR <- stats::p.adjust(
+      results_kruskal$p_value,
+      method = "fdr"
+    )
 
-    addWorksheet(wb, "Kruskal_Wallis")
-    writeData(wb, "Kruskal_Wallis", results_kruskal_sig)
+    results_kruskal_sig <- results_kruskal[
+      results_kruskal$FDR < 0.05,
+      ,
+      drop = FALSE
+    ]
 
-    # Assign dataframe to environment
-    assign("kruskal_wallis_results", results_kruskal_sig, envir = .GlobalEnv)
-    comparison_results_list[["Kruskal_Wallis"]] <- results_kruskal_sig
+    results_kruskal_sig$Significance <- vapply(
+      results_kruskal_sig$p_value,
+      add_significance_symbol,
+      character(1)
+    )
 
-    # Dunn's test
-    results_dunn <- data.frame(miRNA = character(), comparison = character(), Z = numeric(), p_value = numeric(), stringsAsFactors = FALSE)
+    openxlsx::addWorksheet(
+      wb,
+      "Kruskal_Wallis"
+    )
 
-    for (miRNA in results_kruskal_sig$miRNA) {
-      data_miRNA <- df_long %>% filter(miRNA == !!miRNA)  # Subset for each miRNA
+    openxlsx::writeData(
+      wb,
+      "Kruskal_Wallis",
+      results_kruskal_sig
+    )
 
-      dunn_test <- dunn.test(data_miRNA$RPM, data_miRNA$Condition, method = "bh")
+    assign(
+      "kruskal_wallis_results",
+      results_kruskal_sig,
+      envir = .GlobalEnv
+    )
 
-      dunn_df <- data.frame(
-        miRNA = rep(miRNA, length(dunn_test$comparisons)),  # Ensure correct length
-        comparison = dunn_test$comparisons,
-        Z = dunn_test$Z,
-        p_value = dunn_test$P.adjusted
+    comparison_results_list[["Kruskal_Wallis"]] <-
+      results_kruskal_sig
+
+    results_dunn <- data.frame(
+      miRNA = character(),
+      comparison = character(),
+      Z = numeric(),
+      p_value = numeric(),
+      stringsAsFactors = FALSE
+    )
+
+    for (current_miRNA in results_kruskal_sig$miRNA) {
+      data_miRNA <- df_long[
+        df_long$miRNA == current_miRNA,
+        ,
+        drop = FALSE
+      ]
+
+      dunn_result <- dunn.test::dunn.test(
+        data_miRNA$RPM,
+        data_miRNA$Condition,
+        method = "bh"
       )
 
-      dunn_df$Significance <- sapply(dunn_df$p_value, add_significance_symbol)
-      results_dunn <- rbind(results_dunn, dunn_df)
+      dunn_df <- data.frame(
+        miRNA = rep(
+          current_miRNA,
+          length(dunn_result$comparisons)
+        ),
+        comparison = dunn_result$comparisons,
+        Z = dunn_result$Z,
+        p_value = dunn_result$P.adjusted,
+        stringsAsFactors = FALSE
+      )
+
+      dunn_df$Significance <- vapply(
+        dunn_df$p_value,
+        add_significance_symbol,
+        character(1)
+      )
+
+      results_dunn <- rbind(
+        results_dunn,
+        dunn_df
+      )
     }
 
-    # Ensure p_value is numeric
-    results_dunn$p_value <- as.numeric(results_dunn$p_value)
+    results_dunn$p_value <- as.numeric(
+      results_dunn$p_value
+    )
 
-    # Filter for p_value < 0.05
-    results_dunn_filtered <- results_dunn[results_dunn$p_value < 0.05, ]
+    results_dunn_filtered <- results_dunn[
+      results_dunn$p_value < 0.05,
+      ,
+      drop = FALSE
+    ]
 
-    # Save Dunn's test results to separate sheets
-    unique_comparisons <- unique(results_dunn_filtered$comparison)
-    for (comp in unique_comparisons) {
-      subset_comp <- results_dunn_filtered[results_dunn_filtered$comparison == comp, ]
+    unique_comparisons <- unique(
+      results_dunn_filtered$comparison
+    )
 
-      if (nrow(subset_comp) > 0) {
-        addWorksheet(wb, comp)
-        writeData(wb, comp, subset_comp)
-        assign(paste0("dunn_test_", gsub(" - ", "_vs_", comp)), subset_comp, envir = .GlobalEnv)
-        comparison_results_list[[comp]] <- subset_comp
+    for (comparison_name in unique_comparisons) {
+      subset_comparison <- results_dunn_filtered[
+        results_dunn_filtered$comparison == comparison_name,
+        ,
+        drop = FALSE
+      ]
+
+      if (nrow(subset_comparison) > 0) {
+        openxlsx::addWorksheet(
+          wb,
+          comparison_name
+        )
+
+        openxlsx::writeData(
+          wb,
+          comparison_name,
+          subset_comparison
+        )
+
+        assign(
+          paste0(
+            "dunn_test_",
+            gsub(
+              " - ",
+              "_vs_",
+              comparison_name
+            )
+          ),
+          subset_comparison,
+          envir = .GlobalEnv
+        )
+
+        comparison_results_list[[comparison_name]] <-
+          subset_comparison
       }
     }
-
   } else if (num_groups == 2) {
-    # Mann-Whitney U test
-    results_mann_whitney <- df_long %>%
-      group_by(miRNA) %>%
-      summarise(p_value = wilcox.test(RPM ~ Condition)$p.value, .groups = "drop")
+    results_mann_whitney <- dplyr::summarise(
+      dplyr::group_by(
+        df_long,
+        rlang::.data$miRNA
+      ),
+      p_value = stats::wilcox.test(
+        rlang::.data$RPM,
+        rlang::.data$Condition
+      )$p.value,
+      .groups = "drop"
+    )
 
-    results_mann_whitney$FDR <- p.adjust(results_mann_whitney$p_value, method = "fdr")
-    results_mann_whitney_sig <- results_mann_whitney %>% filter(FDR < 0.05)
-    results_mann_whitney_sig$Significance <- sapply(results_mann_whitney_sig$p_value, add_significance_symbol)
+    results_mann_whitney$FDR <- stats::p.adjust(
+      results_mann_whitney$p_value,
+      method = "fdr"
+    )
 
-    addWorksheet(wb, "Mann_Whitney")
-    writeData(wb, "Mann_Whitney", results_mann_whitney_sig)
+    results_mann_whitney_sig <- results_mann_whitney[
+      results_mann_whitney$FDR < 0.05,
+      ,
+      drop = FALSE
+    ]
 
-    assign("mann_whitney_results", results_mann_whitney_sig, envir = .GlobalEnv)
-    comparison_results_list[["Mann_Whitney"]] <- results_mann_whitney_sig
+    results_mann_whitney_sig$Significance <- vapply(
+      results_mann_whitney_sig$p_value,
+      add_significance_symbol,
+      character(1)
+    )
+
+    openxlsx::addWorksheet(
+      wb,
+      "Mann_Whitney"
+    )
+
+    openxlsx::writeData(
+      wb,
+      "Mann_Whitney",
+      results_mann_whitney_sig
+    )
+
+    assign(
+      "mann_whitney_results",
+      results_mann_whitney_sig,
+      envir = .GlobalEnv
+    )
+
+    comparison_results_list[["Mann_Whitney"]] <-
+      results_mann_whitney_sig
   } else {
-    stop("Error: The condition must have at least 2 groups.")
+    stop(
+      "The condition must contain at least two groups.",
+      call. = FALSE
+    )
   }
 
-  # Save workbook in the "Tests_results" folder
-  output_path <- file.path(results_dir, output_file)
-  saveWorkbook(wb, output_path, overwrite = TRUE)
+  output_path <- file.path(
+    results_dir,
+    output_file
+  )
 
-  # Return list of dataframes and output folder path
-  return(list(
+  openxlsx::saveWorkbook(
+    wb,
+    output_path,
+    overwrite = TRUE
+  )
+
+  list(
     comparison_results = comparison_results_list,
     output_folder = results_dir
-  ))
+  )
 }
