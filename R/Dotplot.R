@@ -46,7 +46,6 @@ miRNA_expression_plot <- function(miRNAs_DE, miRNA_ftd, metadata, condition_colu
   library(dplyr)
   library(tibble)
   library(plotly)
-  library(readxl)
   library(htmlwidgets)
 
   # Create "Interactive_plots" folder if it doesn't exist
