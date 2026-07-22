@@ -24,8 +24,14 @@
 #' The deprecated `metrics` and `reads_column` arguments are retained
 #' temporarily for compatibility with miRPM 0.1.0 pipelines.
 #'
+#' The returned matrix stores normalization information in the
+#' `"miRPM_normalization"` attribute. This includes the library sizes,
+#' their source and the approximate number of reads represented by one RPM
+#' in each sample.
+#'
 #' @return A numeric matrix with the same dimensions and dimnames as
-#'   `count_matrix`.
+#'   `count_matrix`. The `"miRPM_normalization"` attribute records the
+#'   normalization method, library sizes, their source and reads per RPM.
 #'
 #' @examples
 #' count_matrix <- matrix(
@@ -40,6 +46,8 @@
 #' rpm_matrix <- normalize_rpm(count_matrix)
 #'
 #' colSums(rpm_matrix)
+#'
+#' attr(rpm_matrix, "miRPM_normalization")
 #'
 #' @export
 normalize_rpm <- function(
@@ -129,10 +137,15 @@ normalize_rpm <- function(
   using_legacy_interface <-
     !is.null(metrics) || !is.null(reads_column)
 
+  external_library_sizes_supplied <- !is.null(library_sizes)
+
   if (using_legacy_interface) {
     if (!is.null(library_sizes)) {
       stop(
-        "Use either `library_sizes` or the deprecated metrics interface, not both.",
+        paste0(
+          "Use either `library_sizes` or the deprecated metrics interface, ",
+          "not both."
+        ),
         call. = FALSE
       )
     }
@@ -169,10 +182,11 @@ normalize_rpm <- function(
     if (
       !is.character(reads_column) ||
       length(reads_column) != 1L ||
-      is.na(reads_column)
+      is.na(reads_column) ||
+      reads_column == ""
     ) {
       stop(
-        "`reads_column` must be a single column name.",
+        "`reads_column` must be a single non-empty column name.",
         call. = FALSE
       )
     }
@@ -283,6 +297,14 @@ normalize_rpm <- function(
     )
   }
 
+  library_size_source <- if (using_legacy_interface) {
+    "legacy_metrics"
+  } else if (external_library_sizes_supplied) {
+    "external_vector"
+  } else {
+    "matrix_column_sums"
+  }
+
   rpm_matrix <- sweep(
     count_matrix,
     MARGIN = 2,
@@ -291,6 +313,16 @@ normalize_rpm <- function(
   ) * 1e6
 
   dimnames(rpm_matrix) <- dimnames(count_matrix)
+
+  attr(rpm_matrix, "miRPM_normalization") <- list(
+    method = "RPM",
+    scale = 1e6,
+    library_sizes = library_sizes,
+    reads_per_rpm = library_sizes / 1e6,
+    library_size_source = library_size_source,
+    input_features = nrow(count_matrix),
+    input_samples = ncol(count_matrix)
+  )
 
   rpm_matrix
 }

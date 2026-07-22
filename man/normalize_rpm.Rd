@@ -27,7 +27,8 @@ library size per sample. Names must match the column names of
 }
 \value{
 A numeric matrix with the same dimensions and dimnames as
-  `count_matrix`.
+  `count_matrix`. The `"miRPM_normalization"` attribute records the
+  normalization method, library sizes, their source and reads per RPM.
 }
 \description{
 Converts a complete count matrix to reads per million (RPM) using the
@@ -43,6 +44,11 @@ and the biological meaning of the resulting RPM values.
 
 The deprecated `metrics` and `reads_column` arguments are retained
 temporarily for compatibility with miRPM 0.1.0 pipelines.
+
+The returned matrix stores normalization information in the
+`"miRPM_normalization"` attribute. This includes the library sizes,
+their source and the approximate number of reads represented by one RPM
+in each sample.
 }
 \examples{
 count_matrix <- matrix(
@@ -57,5 +63,7 @@ count_matrix <- matrix(
 rpm_matrix <- normalize_rpm(count_matrix)
 
 colSums(rpm_matrix)
+
+attr(rpm_matrix, "miRPM_normalization")
 
 }
