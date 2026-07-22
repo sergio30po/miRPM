@@ -32,7 +32,7 @@ normalize_rpm <- function(count_matrix, metrics, reads_column) {
   }
 
   # Extract the total reads per sample
-  reads_per_sample <- setNames(metrics[[reads_column]], metrics[[sample_column]])
+  reads_per_sample <- stats::setNames(metrics[[reads_column]],metrics[[sample_column]])
 
   # Verify that all samples in the count matrix are present in metrics
   if (!all(colnames(count_matrix) %in% names(reads_per_sample))) {
