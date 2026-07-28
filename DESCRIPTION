@@ -24,15 +24,11 @@ BugReports: https://github.com/sergio30po/miRPM/issues
 Encoding: UTF-8
 LazyData: true
 Imports: 
-    dplyr,
     dunn.test,
     ggplot2,
     htmlwidgets,
     openxlsx,
     plotly,
-    rlang,
-    tibble,
-    tidyr
 Config/roxygen2/version: 8.0.0
 Suggests: 
     testthat (>= 3.0.0)

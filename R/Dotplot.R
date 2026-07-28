@@ -1,123 +1,261 @@
-#' Generate dot plots for differentially expressed miRNAs
+#' Plot expression for selected miRNAs
 #'
-#' This function generates dot plots for differentially expressed miRNAs between specific groups.
-#' The plots are saved as interactive HTML files in a folder called "Interactive_plots" with a specified output name.
-#' A customizable title can be added to the plot.
+#' Creates a joint dot plot for selected miRNAs across one or more groups.
+#' The function returns both a static `ggplot2` object and an interactive
+#' `plotly` object. Saving the interactive plot as HTML is optional.
 #'
-#' @param miRNAs_DE File containing differentially expressed miRNAs (miRNAs should be in the first column).
-#' @param miRNA_ftd Count matrix with miRNAs as row names and samples as column names.
-#' @param metadata Data frame containing sample information. Must have a column with sample names and a condition column.
-#' @param condition_column Name of the column in `metadata` that contains the group classifications.
-#' @param groups Vector specifying the two groups to compare within the `condition_column`.
-#' @param colors Named vector specifying the colors for each group.
-#' @param output_name Name for the output HTML file.
-#' @param plot_title Title for the plot (default: "miRNA Expression Plot").
+#' @param miRNAs_DE Deprecated-compatible input for the selected miRNAs.
+#'   It may be a character vector or a data frame or matrix whose first
+#'   column contains miRNA names. Use `mirnas` in new code.
+#' @param miRNA_ftd Deprecated-compatible input for the normalized RPM
+#'   matrix. Use `rpm_matrix` in new code.
+#' @param metadata A data frame containing sample metadata.
+#' @param condition_column Name of the metadata column defining the groups.
+#' @param groups Optional character vector defining the groups to display
+#'   and their order. When `NULL`, all observed groups are included.
+#' @param colors Optional named character vector assigning a color to every
+#'   selected group. When `NULL`, the default `ggplot2` palette is used.
+#' @param output_name Optional name for the HTML file. The `.html` extension
+#'   is added automatically.
+#' @param plot_title Character string used as the plot title.
+#' @param sample_column Name of the metadata column containing sample
+#'   identifiers. Default is `"Sample"`.
+#' @param tooltip_columns Optional character vector naming additional
+#'   metadata columns to include in the interactive tooltip.
+#' @param output_dir Directory used when `save_html = TRUE`.
+#' @param save_html Logical. If `TRUE`, save the interactive plot as HTML.
+#'   By default, saving is enabled when `output_name` is supplied.
+#' @param selfcontained Logical passed to `htmlwidgets::saveWidget()`.
+#' @param mirnas Preferred input for selected miRNAs. It may be a character
+#'   vector or a data frame or matrix whose first column contains names.
+#' @param rpm_matrix Preferred numeric RPM matrix, with miRNAs in rows and
+#'   samples in columns.
+#'
+#' @details
+#' Metadata are aligned to the expression matrix using sample identifiers,
+#' not row position. Cohort-specific tooltip variables are not assumed;
+#' additional fields can be selected through `tooltip_columns`.
+#'
+#' `miRNAs_DE` and `miRNA_ftd` are retained so calls written for miRPM 0.1.0
+#' continue to work. New analyses should use `mirnas` and `rpm_matrix`.
 #'
 #' @return A list containing:
 #' \itemize{
-#'   \item `ggplot`: A ggplot object of the dot plot.
-#'   \item `interactive`: An interactive plotly object of the dot plot.
-#'   \item `output_folder`: The path to the "Interactive_plots" folder where the HTML file is saved.
+#'   \item `ggplot`: the static `ggplot2` object.
+#'   \item `interactive`: the interactive `plotly` object.
+#'   \item `data`: the aligned long-format data used for plotting.
+#'   \item `selected_mirnas`: miRNAs included in the plot.
+#'   \item `missing_mirnas`: requested miRNAs absent from the matrix.
+#'   \item `groups`: groups included in the plot.
+#'   \item `output_file`: saved HTML path, or `NULL`.
+#'   \item `output_folder`: saved output directory, or `NULL`.
 #' }
 #'
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' rpm_matrix <- matrix(
+#'   c(
+#'     5, 6, 10, 11,
+#'     2, 3, 8, 9
+#'   ),
+#'   nrow = 2,
+#'   byrow = TRUE,
+#'   dimnames = list(
+#'     c("miR-1", "miR-2"),
+#'     c("S1", "S2", "S3", "S4")
+#'   )
+#' )
+#'
+#' metadata <- data.frame(
+#'   Sample = c("S3", "S1", "S4", "S2"),
+#'   Condition = c("Disease", "Control", "Disease", "Control"),
+#'   Sex = c("F", "M", "M", "F")
+#' )
+#'
 #' output <- miRNA_expression_plot(
-#'   miRNAs_DE = "differential_miRNAs.xlsx",
-#'   miRNA_ftd = miRNA_ftd,
+#'   mirnas = c("miR-1", "miR-2"),
+#'   rpm_matrix = rpm_matrix,
 #'   metadata = metadata,
 #'   condition_column = "Condition",
 #'   groups = c("Control", "Disease"),
-#'   colors = c("Control" = "blue", "Disease" = "red"),
-#'   output_name = "miRNA_expression",
-#'   plot_title = "Differentially Expressed miRNAs in Control vs Disease"
+#'   tooltip_columns = "Sex",
+#'   save_html = FALSE
 #' )
 #'
 #' output$ggplot
-#' output$interactive
-#' output$output_folder
-#' }
-
 miRNA_expression_plot <- function(
-    miRNAs_DE,
-    miRNA_ftd,
-    metadata,
-    condition_column,
-    groups,
-    colors,
-    output_name,
-    plot_title = "miRNA Expression Plot"
+    miRNAs_DE = NULL,
+    miRNA_ftd = NULL,
+    metadata = NULL,
+    condition_column = NULL,
+    groups = NULL,
+    colors = NULL,
+    output_name = NULL,
+    plot_title = "miRNA Expression Plot",
+    sample_column = "Sample",
+    tooltip_columns = NULL,
+    output_dir = "Interactive_plots",
+    save_html = !is.null(output_name),
+    selfcontained = TRUE,
+    mirnas = NULL,
+    rpm_matrix = NULL
 ) {
-  output_folder <- "Interactive_plots"
-
-  if (!dir.exists(output_folder)) {
-    dir.create(output_folder, recursive = TRUE)
+  if (
+    !is.null(miRNAs_DE) &&
+      !is.null(mirnas)
+  ) {
+    stop(
+      "Supply either `mirnas` or `miRNAs_DE`, not both.",
+      call. = FALSE
+    )
   }
 
-  miRNAs_DE <- miRNAs_DE[[1]]
+  if (
+    !is.null(miRNA_ftd) &&
+      !is.null(rpm_matrix)
+  ) {
+    stop(
+      "Supply either `rpm_matrix` or `miRNA_ftd`, not both.",
+      call. = FALSE
+    )
+  }
 
-  df_long <- as.data.frame(miRNA_ftd)
-  df_long <- tibble::rownames_to_column(df_long, var = "miRNA")
+  selected_mirnas <- if (!is.null(mirnas)) {
+    mirnas
+  } else {
+    miRNAs_DE
+  }
 
-  df_long <- dplyr::filter(
-    df_long,
-    rlang::.data$miRNA %in% miRNAs_DE
+  expression_matrix <- if (!is.null(rpm_matrix)) {
+    rpm_matrix
+  } else {
+    miRNA_ftd
+  }
+
+  if (is.null(selected_mirnas)) {
+    stop(
+      "Supply `mirnas`.",
+      call. = FALSE
+    )
+  }
+
+  if (is.null(expression_matrix)) {
+    stop(
+      "Supply `rpm_matrix`.",
+      call. = FALSE
+    )
+  }
+
+  if (is.null(metadata)) {
+    stop(
+      "Supply `metadata`.",
+      call. = FALSE
+    )
+  }
+
+  .validate_plot_column_name(
+    condition_column,
+    "condition_column"
   )
 
-  df_long <- tidyr::pivot_longer(
-    df_long,
-    cols = -1,
-    names_to = "Sample",
-    values_to = "RPM"
+  .validate_plot_column_name(
+    sample_column,
+    "sample_column"
   )
 
-  df_long <- dplyr::left_join(
-    df_long,
-    metadata,
-    by = "Sample"
+  if (
+    !is.character(plot_title) ||
+      length(plot_title) != 1L ||
+      is.na(plot_title)
+  ) {
+    stop(
+      "`plot_title` must be a single character string.",
+      call. = FALSE
+    )
+  }
+
+  if (
+    !is.logical(save_html) ||
+      length(save_html) != 1L ||
+      is.na(save_html)
+  ) {
+    stop(
+      "`save_html` must be `TRUE` or `FALSE`.",
+      call. = FALSE
+    )
+  }
+
+  if (
+    !is.logical(selfcontained) ||
+      length(selfcontained) != 1L ||
+      is.na(selfcontained)
+  ) {
+    stop(
+      "`selfcontained` must be `TRUE` or `FALSE`.",
+      call. = FALSE
+    )
+  }
+
+  prepared <- .prepare_mirna_plot_data(
+    rpm_matrix = expression_matrix,
+    metadata = metadata,
+    mirnas = selected_mirnas,
+    sample_column = sample_column,
+    condition_column = condition_column,
+    groups = groups
   )
 
-  df_long <- dplyr::filter(
-    df_long,
-    df_long[[condition_column]] %in% groups
+  selected_colors <- .validate_condition_colors(
+    colors = colors,
+    groups = prepared$groups
   )
 
-  p <- ggplot2::ggplot(
-    df_long,
+  if (length(prepared$missing_mirnas) > 0L) {
+    warning(
+      paste0(
+        "The following miRNAs were not found and were omitted: ",
+        paste(prepared$missing_mirnas, collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+
+  plot_data <- prepared$data
+
+  plot_data$.miRPM_tooltip <- .build_mirna_tooltip(
+    data = plot_data,
+    sample_column = sample_column,
+    condition_column = condition_column,
+    tooltip_columns = tooltip_columns
+  )
+
+  plot_data$.miRPM_group <- factor(
+    as.character(plot_data[[condition_column]]),
+    levels = prepared$groups
+  )
+
+  plot_object <- ggplot2::ggplot(
+    plot_data,
     ggplot2::aes(
-      x = rlang::.data$miRNA,
-      y = rlang::.data$RPM,
-      color = rlang::.data[[condition_column]],
-      text = paste(
-        "Sample:", rlang::.data$Sample,
-        "<br>miRNA:", rlang::.data$miRNA,
-        "<br>RPM:", round(rlang::.data$RPM, 2),
-        "<br>Condition:", rlang::.data[[condition_column]],
-        "<br>Pathology:", rlang::.data$Pathology,
-        "<br>Gender:", rlang::.data$Gender,
-        "<br>Onset age:", rlang::.data$Onset_age,
-        "<br>Age at death:", rlang::.data$Death_age,
-        "<br>Braak:", rlang::.data$Braak_stage,
-        "<br>APOE:", rlang::.data$APOE,
-        "<br>Disease duration:", rlang::.data$Disease_duration,
-        "<br>HTT short allele:", rlang::.data$HTT_short_allele,
-        "<br>HTT long allele:", rlang::.data$HTT_long_allele
-      )
+      x = miRNA,
+      y = RPM,
+      color = .miRPM_group,
+      text = .miRPM_tooltip
     )
   ) +
     ggplot2::geom_point(
       alpha = 0.7,
-      position = ggplot2::position_dodge(width = 0.3)
+      position = ggplot2::position_dodge(
+        width = 0.4
+      )
     ) +
     ggplot2::labs(
       title = plot_title,
-      x = "miRNAs",
+      x = "miRNA",
       y = "RPM per sample",
       color = condition_column
     ) +
-    ggplot2::scale_color_manual(values = colors) +
     ggplot2::theme_minimal() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(
@@ -132,24 +270,77 @@ miRNA_expression_plot <- function(
       )
     )
 
+  if (!is.null(selected_colors)) {
+    plot_object <- plot_object +
+      ggplot2::scale_color_manual(
+        values = selected_colors,
+        breaks = prepared$groups,
+        drop = FALSE
+      )
+  }
+
   interactive_plot <- plotly::ggplotly(
-    p,
+    plot_object,
     tooltip = "text"
   )
 
-  output_file <- file.path(
-    output_folder,
-    paste0(output_name, ".html")
-  )
+  output_file <- NULL
+  output_folder <- NULL
 
-  htmlwidgets::saveWidget(
-    interactive_plot,
-    file = output_file
-  )
+  if (isTRUE(save_html)) {
+    if (
+      !is.character(output_dir) ||
+        length(output_dir) != 1L ||
+        is.na(output_dir) ||
+        trimws(output_dir) == ""
+    ) {
+      stop(
+        "`output_dir` must be a single non-empty path.",
+        call. = FALSE
+      )
+    }
+
+    file_name <- .sanitize_plot_filename(
+      output_name,
+      extension = "html"
+    )
+
+    dir.create(
+      output_dir,
+      recursive = TRUE,
+      showWarnings = FALSE
+    )
+
+    output_file <- file.path(
+      output_dir,
+      file_name
+    )
+
+    htmlwidgets::saveWidget(
+      interactive_plot,
+      file = output_file,
+      selfcontained = selfcontained
+    )
+
+    output_file <- normalizePath(
+      output_file,
+      winslash = "/",
+      mustWork = TRUE
+    )
+
+    output_folder <- dirname(
+      output_file
+    )
+  }
 
   list(
-    ggplot = p,
+    ggplot = plot_object,
     interactive = interactive_plot,
+    data = plot_data,
+    selected_mirnas = prepared$selected_mirnas,
+    missing_mirnas = prepared$missing_mirnas,
+    groups = prepared$groups,
+    output_file = output_file,
     output_folder = output_folder
   )
 }
