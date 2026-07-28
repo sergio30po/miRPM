@@ -14,22 +14,25 @@ Authors@R: c(
            email = "iglesiaseduardo@uniovi.es",
            role = "aut",
            comment = c(ORCID = "0000-0002-3063-1562"))
- )
+    )
 Description: Lightweight tools to explore, normalize, and analyze miRNA-seq count
     matrices using reads per million (RPM) normalization.
-Depends: R (>= 4.0)
+Depends:
+    R (>= 4.0)
 License: MIT + file LICENSE
-URL: https://sergio30po.github.io/miRPM, https://github.com/sergio30po/miRPM
+URL: https://sergio30po.github.io/miRPM/,
+    https://github.com/sergio30po/miRPM
 BugReports: https://github.com/sergio30po/miRPM/issues
 Encoding: UTF-8
 LazyData: true
-Imports: 
+Imports:
     dunn.test,
     ggplot2,
     htmlwidgets,
     openxlsx,
-    plotly,
-Config/roxygen2/version: 8.0.0
-Suggests: 
+    plotly
+Suggests:
+    pkgdown,
     testthat (>= 3.0.0)
+Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
