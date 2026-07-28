@@ -2,40 +2,133 @@
 % Please edit documentation in R/RPM_filter.R
 \name{filter_mirnas}
 \alias{filter_mirnas}
-\title{Filter miRNAs based on expression in a minimum percentage of samples in any group}
+\title{Filter miRNAs by abundance and prevalence}
 \usage{
 filter_mirnas(
-  count_matrix,
-  metadata,
-  threshold = 0.5,
-  min_reads = 1000,
-  threshold_comparison = ">=",
-  read_comparison = ">"
+  rpm_matrix = NULL,
+  metadata = NULL,
+  threshold = NULL,
+  min_reads = NULL,
+  threshold_comparison = NULL,
+  read_comparison = NULL,
+  count_matrix = NULL,
+  raw_counts = NULL,
+  min_rpm = 5,
+  min_count = NULL,
+  min_prevalence = 0.5,
+  min_samples = NULL,
+  group_column = NULL,
+  prevalence_scope = c("overall", "any_group", "all_groups"),
+  min_groups = 1,
+  return_diagnostics = FALSE
 )
 }
 \arguments{
-\item{count_matrix}{A count matrix (miRNAs in rows, samples in columns).}
+\item{rpm_matrix}{A numeric matrix or data frame containing RPM values,
+with miRNAs in rows and samples in columns.}
 
-\item{metadata}{A data frame containing sample information, including a 'Condition' column with the group for each sample.}
+\item{metadata}{Optional data frame containing sample information. Grouped
+filtering requires a `Sample` column and the column named by
+`group_column`.}
 
-\item{threshold}{Minimum percentage of samples with reads (value between 0 and 1, default is 0.5).}
+\item{threshold}{Deprecated. Minimum prevalence used by the miRPM 0.1.0
+interface.}
 
-\item{min_reads}{Minimum number of reads to consider a miRNA expressed in a sample (default is 1000).}
+\item{min_reads}{Deprecated. Minimum expression value used by the miRPM
+0.1.0 interface. In the historical workflow this was normally applied to
+an RPM-normalized matrix despite the argument name.}
 
-\item{threshold_comparison}{Comparison operator for the threshold. Options are ">", ">=", "<", or "<=" (default is ">=").}
+\item{threshold_comparison}{Deprecated comparison operator for
+`threshold`.}
 
-\item{read_comparison}{Comparison operator for the read count. Options are ">", ">=", "<", or "<=" (default is ">").}
+\item{read_comparison}{Deprecated comparison operator for `min_reads`.}
+
+\item{count_matrix}{Deprecated named alias for the normalized matrix used
+by miRPM 0.1.0.}
+
+\item{raw_counts}{Optional raw count matrix corresponding to `rpm_matrix`.
+When supplied with `min_count`, a sample must satisfy both the RPM and
+raw-count thresholds.}
+
+\item{min_rpm}{Minimum RPM required for a miRNA to be considered detected
+in a sample. The default is 5.}
+
+\item{min_count}{Optional minimum raw count required in addition to
+`min_rpm`. When `raw_counts` is omitted, counts are inferred from the
+normalization metadata created by `normalize_rpm()`.}
+
+\item{min_prevalence}{Minimum proportion of samples in which a miRNA must
+satisfy the abundance criterion. Must be between 0 and 1.}
+
+\item{min_samples}{Optional minimum absolute number of samples that must
+satisfy the abundance criterion. When both `min_prevalence` and
+`min_samples` are supplied, both requirements are enforced.}
+
+\item{group_column}{Optional name of the metadata column defining groups.}
+
+\item{prevalence_scope}{Filtering scope. One of `"overall"`,
+`"any_group"` or `"all_groups"`.}
+
+\item{min_groups}{Minimum number of groups in which the criterion must be
+satisfied when `prevalence_scope = "any_group"`.}
+
+\item{return_diagnostics}{If `TRUE`, return a list containing the filtered
+matrix, diagnostics, summary and parameters. If `FALSE`, return only the
+filtered matrix and store the same information as attributes.}
 }
 \value{
-A filtered count matrix containing miRNAs that meet the criteria in at least one group.
+A filtered RPM matrix, or a list containing the filtered matrix,
+  diagnostics, summary and parameters when `return_diagnostics = TRUE`.
 }
 \description{
-This function filters miRNAs that have reads in at least a specified percentage of samples in any group.
-The comparison operator for both the threshold and the read count can be customized (>, >=, <, <=).
+Filters a normalized RPM matrix using configurable abundance, prevalence,
+sample-count and group-specific criteria.
+}
+\details{
+The recommended workflow is to normalize the complete count matrix with
+`normalize_rpm()` before filtering. Filtering thresholds are configurable
+because their interpretation depends on sequencing depth, sample type,
+library complexity and study objectives.
+
+A provisional starting profile for differential-expression analysis is
+`min_rpm = 5`, `min_count = 15`, `min_prevalence = 0.5`,
+`min_samples = 3` and `prevalence_scope = "any_group"`. These values are
+recommendations rather than universal requirements.
+
+With `prevalence_scope = "overall"`, the criterion is evaluated across all
+samples. With `"any_group"`, it must be satisfied in at least `min_groups`
+groups. With `"all_groups"`, it must be satisfied in every group.
+
+The historical miRPM 0.1.0 interface is retained temporarily for backward
+compatibility.
 }
 \examples{
-# Example usage:
-# count_matrix <- matrix(c(1000, 0, 2000, 1500, 0, 3000), nrow = 2, dimnames = list(c("miRNA1", "miRNA2"), c("Sample1", "Sample2", "Sample3")))
-# metadata <- data.frame(Sample = c("Sample1", "Sample2", "Sample3"), Condition = c("A", "A", "B"))
-# filtered_matrix <- filter_mirnas(count_matrix, metadata, threshold = 0.5, min_reads = 1000, threshold_comparison = ">=", read_comparison = ">")
+rpm_matrix <- matrix(
+  c(
+    5, 6, 0, 0,
+    0, 0, 10, 0,
+    0, 0, 0, 0
+  ),
+  nrow = 3,
+  byrow = TRUE,
+  dimnames = list(
+    c("miR-1", "miR-2", "miR-3"),
+    c("S1", "S2", "S3", "S4")
+  )
+)
+
+metadata <- data.frame(
+  Sample = c("S1", "S2", "S3", "S4"),
+  Group = c("Control", "Control", "Disease", "Disease")
+)
+
+filtered <- filter_mirnas(
+  rpm_matrix = rpm_matrix,
+  metadata = metadata,
+  min_rpm = 5,
+  min_prevalence = 0.5,
+  group_column = "Group",
+  prevalence_scope = "any_group"
+)
+
 }

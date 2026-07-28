@@ -2,57 +2,139 @@
 % Please edit documentation in R/Individual_dotplot.R
 \name{individual_miRNA_plot}
 \alias{individual_miRNA_plot}
-\title{Individual miRNA plot for differentially expressed miRNAs}
+\title{Create individual expression plots for selected miRNAs}
 \usage{
 individual_miRNA_plot(
-  filtered_results,
-  rpm_matrix,
-  metadata,
-  condition_column,
-  sample_column,
-  groups_to_include,
-  condition_colors,
-  adjusted_pvalue_column,
-  output_dir = "Individual_plots"
+  filtered_results = NULL,
+  rpm_matrix = NULL,
+  metadata = NULL,
+  condition_column = NULL,
+  sample_column = "Sample",
+  groups_to_include = NULL,
+  condition_colors = NULL,
+  adjusted_pvalue_column = "FDR",
+  output_dir = "Individual_plots",
+  save_png = TRUE,
+  mirna_column = "miRNA",
+  mirnas = NULL,
+  point_size = 3,
+  point_alpha = 0.7,
+  jitter_width = 0.12,
+  width = 6,
+  height = 6,
+  dpi = 300
 )
 }
 \arguments{
-\item{filtered_results}{Data frame with the filtered results (FDR < 0.05). The first column should contain miRNA names.}
+\item{filtered_results}{Optional data frame, matrix or character vector
+defining the miRNAs to plot. For a table, the miRNA names are taken from
+`mirna_column`; when that column is absent, the first column is used for
+backward compatibility with miRPM 0.1.0.}
 
-\item{rpm_matrix}{Matrix of RPMs (miRNAs in rows, samples in columns).}
+\item{rpm_matrix}{Numeric matrix or data frame containing normalized RPM
+values, with miRNAs in rows and samples in columns.}
 
-\item{metadata}{Data frame with sample group information. Must have a column for sample names and another for groups.}
+\item{metadata}{Data frame containing sample metadata.}
 
-\item{condition_column}{Name of the column in `metadata` that contains the groups.}
+\item{condition_column}{Name of the metadata column defining the groups.}
 
-\item{sample_column}{Name of the column in `metadata` that contains the sample names.}
+\item{sample_column}{Name of the metadata column containing sample
+identifiers. Default is `"Sample"`.}
 
-\item{groups_to_include}{Vector with the names of the groups to include in the comparison.}
+\item{groups_to_include}{Optional character vector defining the groups to
+display and their order. When `NULL`, all observed groups are included.}
 
-\item{condition_colors}{Named vector of colors for each condition. The names should match the groups in `groups_to_include`.}
+\item{condition_colors}{Optional named character vector assigning a color
+to every selected group. When `NULL`, the default `ggplot2` palette is
+used.}
 
-\item{adjusted_pvalue_column}{Name of the column in `filtered_results` that contains the adjusted p-value.}
+\item{adjusted_pvalue_column}{Optional name of the adjusted p-value column
+in `filtered_results`. When `NULL`, no adjusted p-value is shown.
+Default is `"FDR"`.}
 
-\item{output_dir}{Name of the main folder where the plots will be saved (default: "Individual_plots").}
+\item{output_dir}{Main directory used when `save_png = TRUE`.}
+
+\item{save_png}{Logical. If `TRUE`, save one PNG file per miRNA.}
+
+\item{mirna_column}{Name of the miRNA column in `filtered_results`.
+Default is `"miRNA"`.}
+
+\item{mirnas}{Preferred direct character vector of miRNA names. Supply
+either `mirnas` or `filtered_results`, not both.}
+
+\item{point_size}{Numeric point size.}
+
+\item{point_alpha}{Numeric point transparency between 0 and 1.}
+
+\item{jitter_width}{Numeric horizontal jitter width. Use zero to disable
+jitter.}
+
+\item{width}{Numeric PNG width in inches.}
+
+\item{height}{Numeric PNG height in inches.}
+
+\item{dpi}{Numeric PNG resolution.}
 }
 \value{
-No return value. The plots are saved as PNG files in the specified folder structure.
+A list containing:
+\itemize{
+  \item `plots`: named list of `ggplot2` objects.
+  \item `files`: named character vector of saved PNG paths, or an empty
+  character vector when `save_png = FALSE`.
+  \item `data`: aligned long-format data used for plotting.
+  \item `selected_mirnas`: miRNAs included in the plots.
+  \item `missing_mirnas`: requested miRNAs absent from the matrix.
+  \item `groups`: groups included in the plots.
+  \item `adjusted_pvalues`: named adjusted p-values used in captions.
+  \item `output_folder`: output directory, or `NULL`.
+}
 }
 \description{
-This function generates dot plots for differentially expressed miRNAs between specific groups.
-The plots are saved as PNG files in a folder named after the comparison, inside a main folder called "Individual_plots".
+Creates one dot plot per selected miRNA across one or more groups. Plots
+can be returned without writing files or optionally saved as PNG images.
+}
+\details{
+Metadata are aligned to the RPM matrix using sample identifiers, not row
+position. Missing requested miRNAs are reported and omitted.
+
+The historical miRPM 0.1.0 positional interface remains supported:
+
+`individual_miRNA_plot(filtered_results, rpm_matrix, metadata,
+condition_column, sample_column, groups_to_include, condition_colors,
+adjusted_pvalue_column, output_dir)`.
 }
 \examples{
-\dontrun{
-individual_miRNA_plot(
-  filtered_results = filtered_results,
+rpm_matrix <- matrix(
+  c(
+    5, 6, 10, 11,
+    2, 3, 8, 9
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list(
+    c("miR-1", "miR-2"),
+    c("S1", "S2", "S3", "S4")
+  )
+)
+
+metadata <- data.frame(
+  Sample = c("S3", "S1", "S4", "S2"),
+  Condition = c("Disease", "Control", "Disease", "Control")
+)
+
+results <- data.frame(
+  miRNA = c("miR-1", "miR-2"),
+  FDR = c(0.01, 0.04)
+)
+
+output <- individual_miRNA_plot(
+  filtered_results = results,
   rpm_matrix = rpm_matrix,
   metadata = metadata,
   condition_column = "Condition",
-  sample_column = "Samples",
-  groups_to_include = c("Group1", "Group2"),
-  condition_colors = c("Group1" = "blue", "Group2" = "red"),
-  adjusted_pvalue_column = "adj.P.Val"
+  groups_to_include = c("Control", "Disease"),
+  save_png = FALSE
 )
-}
+
+output$plots[["miR-1"]]
 }

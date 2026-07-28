@@ -2,34 +2,137 @@
 % Please edit documentation in R/Statistical_tests.R
 \name{perform_statistical_tests}
 \alias{perform_statistical_tests}
-\title{Perform Statistical Tests on miRNA Expression Data}
+\title{Perform non-parametric differential-expression analysis}
 \usage{
-perform_statistical_tests(miRNA_ftd, metadata, condition, output_file)
+perform_statistical_tests(
+  miRNA_ftd,
+  metadata,
+  condition,
+  output_file = NULL,
+  assign_results = TRUE,
+  output_dir = "Tests_results",
+  alpha = 0.05,
+  p_adjust_method = "BH",
+  detection_threshold = 0,
+  pseudocount = 1,
+  group_order = NULL,
+  posthoc_only_if_global_significant = TRUE,
+  write_excel = !is.null(output_file)
+)
 }
 \arguments{
-\item{miRNA_ftd}{A count matrix of miRNA expression data (miRNAs in rows, samples in columns).}
+\item{miRNA_ftd}{A numeric matrix or data frame containing normalized
+expression values, with miRNAs in rows and samples in columns.}
 
-\item{metadata}{A dataframe containing sample information, including the condition to test.}
+\item{metadata}{A data frame containing sample information. It must include
+a `Sample` column and the column named by `condition`.}
 
-\item{condition}{The name of the column in `metadata` that defines the groups to compare.}
+\item{condition}{A single character string naming the metadata column that
+defines the comparison groups.}
 
-\item{output_file}{The name of the output Excel file (e.g., "Results.xlsx").}
+\item{output_file}{Optional name of the Excel workbook. When `NULL`, no
+workbook is written.}
+
+\item{assign_results}{Logical. If `TRUE`, significant legacy result objects
+are also assigned to the calling environment for backward compatibility.
+Default is `TRUE`.}
+
+\item{output_dir}{Directory used when an Excel workbook is written. Default
+is `"Tests_results"`.}
+
+\item{alpha}{FDR threshold used to define significant results. Default is
+`0.05`.}
+
+\item{p_adjust_method}{Multiple-testing correction passed to
+`stats::p.adjust()`. Default is `"BH"`.}
+
+\item{detection_threshold}{Expression value above which a miRNA is
+considered detected when prevalence is calculated. Default is `0`.}
+
+\item{pseudocount}{Non-negative value added to group medians before
+calculating the descriptive log2 median ratio. Default is `1`.}
+
+\item{group_order}{Optional character vector defining group order. For a
+two-group comparison, positive rank-biserial correlation indicates
+greater values in the first group than in the second group.}
+
+\item{posthoc_only_if_global_significant}{Logical. For analyses with three
+or more groups, perform Dunn comparisons only for miRNAs with a
+Kruskal-Wallis FDR below `alpha`. Default is `TRUE`.}
+
+\item{write_excel}{Logical. If `TRUE`, write an Excel workbook. By default,
+this is `TRUE` when `output_file` is supplied and `FALSE` otherwise.}
 }
 \value{
-An Excel file with statistical results. For Kruskal-Wallis, it includes a sheet for the global test and sheets for Dunn's post hoc comparisons. For Mann-Whitney, it includes a single sheet with the test results. Each sheet will have a column titled "Significance" showing the corresponding symbol (`*`, `**`, or `***`).
-
-A dataframe for each comparison.
-
-The path to the output folder ("Tests_results").
+A structured list containing:
+\itemize{
+  \item `analysis_type`: `"two_group"` or `"multi_group"`.
+  \item `groups`: ordered group names.
+  \item `group_sizes`: sample counts by group.
+  \item `results`: complete Mann-Whitney or Kruskal-Wallis results.
+  \item `significant_results`: rows with FDR below `alpha`.
+  \item `posthoc_results`: complete Dunn results for multigroup analyses.
+  \item `significant_posthoc_results`: significant Dunn results.
+  \item `comparison_results`: legacy-compatible significant result tables.
+  \item `parameters`: analysis settings.
+  \item `output_file`: written workbook path, or `NULL`.
+  \item `output_folder`: workbook directory, or `NULL`.
+}
 }
 \description{
-This function performs statistical tests on miRNA expression data based on the number of groups in the specified condition.
-For two groups, it performs the Mann-Whitney U test. For three or more groups, it performs the Kruskal-Wallis test followed by Dunn's post hoc test.
-Results are saved in an Excel file inside the "Tests_results" folder with separate sheets for each comparison. Each sheet will also include a column indicating the significance of the results using symbols: `*` for p-value < 0.05, `**` for p-value < 0.01, and `***` for p-value < 0.005.
+Performs rank-based differential-expression analysis on a normalized
+miRNA expression matrix. Two-group comparisons use the
+Mann-Whitney-Wilcoxon rank-sum test. Comparisons involving three or more
+groups use the Kruskal-Wallis test followed by Dunn post-hoc comparisons.
+}
+\details{
+The function expects an already normalized and, when appropriate, filtered
+expression matrix. Filtering and normalization should be completed before
+differential-expression testing.
+
+For two groups, the function reports the Wilcoxon statistic, raw p-value,
+FDR, rank-biserial correlation, probability of superiority, differences
+between group means and medians, a descriptive log2 median ratio, and
+group-specific abundance and prevalence summaries.
+
+For three or more groups, the function reports the Kruskal-Wallis
+statistic, FDR and epsilon-squared effect size. Dunn post-hoc p-values are
+adjusted across miRNAs separately for each pairwise comparison.
+
+The Wilcoxon rank-sum test should not automatically be interpreted as a
+test of medians. Rank-biserial correlation and probability of superiority
+describe the direction and magnitude of rank separation between groups.
+
+The log2 median ratio is descriptive and is not used as a mandatory
+significance threshold.
 }
 \examples{
-# Example usage:
-# miRNA_ftd <- matrix(c(10, 20, 30, 40, 50, 60), nrow = 2, dimnames = list(c("miRNA1", "miRNA2"), c("Sample1", "Sample2", "Sample3")))
-# metadata <- data.frame(Sample = c("Sample1", "Sample2", "Sample3"), Condition = c("A", "A", "B"))
-# perform_statistical_tests(miRNA_ftd, metadata, "Condition", "Test_Results.xlsx")
+expression_matrix <- matrix(
+  c(
+    1, 2, 1, 8, 9, 10,
+    5, 4, 6, 5, 4, 6
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list(
+    c("miR-1", "miR-2"),
+    paste0("S", 1:6)
+  )
+)
+
+metadata <- data.frame(
+  Sample = paste0("S", 1:6),
+  Condition = rep(c("Control", "Disease"), each = 3)
+)
+
+result <- perform_statistical_tests(
+  miRNA_ftd = expression_matrix,
+  metadata = metadata,
+  condition = "Condition",
+  output_file = NULL,
+  assign_results = FALSE
+)
+
+result$results
+
 }
