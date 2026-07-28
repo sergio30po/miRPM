@@ -47,32 +47,47 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="mirpm-mirna-rpm-normalization">miRPM: miRNA RPM Normalization<a class="anchor" aria-label="anchor" href="#mirpm-mirna-rpm-normalization"></a>
+<div class="page-header"><h1 id="mirpm">miRPM<a class="anchor" aria-label="anchor" href="#mirpm"></a>
 </h1></div>
+<!-- badges: start -->
+
+<p><code>miRPM</code> is an R package for transparent and reproducible analysis of microRNA sequencing count data using reads per million (RPM) normalization.</p>
+<p>The package provides a modular workflow for:</p>
+<ul>
+<li>RPM normalization with explicit library-size handling.</li>
+<li>Abundance and prevalence filtering.</li>
+<li>Non-parametric analysis of group differences.</li>
+<li>Multiple-testing correction and effect-size estimation.</li>
+<li>Static and interactive expression plots.</li>
+<li>Optional Excel, HTML and PNG output.</li>
+</ul>
 <div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+<h2 id="scope">Scope<a class="anchor" aria-label="anchor" href="#scope"></a>
 </h2>
-<p><strong>miRPM</strong> is a lightweight R package for <strong>normalization and analysis of microRNA-seq (miRNA-seq) count data</strong> using <em>Reads Per Million (RPM)</em>.<br>
-This approach provides a straightforward and biologically interpretable way to compare miRNA expression levels across samples with different sequencing depths.</p>
-<p>miRPM is designed for reproducible analysis of small RNA-seq datasets, providing core functionalities for <strong>RPM normalization</strong>, <strong>filtering</strong>, <strong>visualization</strong>, and <strong>basic statistical testing</strong>.</p>
-<hr>
+<p>RPM normalization rescales each sample by its sequencing depth:</p>
+<p>[ <em>{ij} =  {</em>{j}} ^6 ]</p>
+<p>where (i) identifies a miRNA and (j) identifies a sample.</p>
+<p>RPM is a transparent scaling method, not a count-based statistical model. It is useful for exploratory analysis, visualization and workflows in which normalized abundance has a direct interpretation.</p>
+<p>For confirmatory differential-expression analyses, results should be benchmarked against established count-based methods such as DESeq2, edgeR or limma-voom, particularly when composition bias, complex designs or strong mean-variance relationships are expected.</p>
 </div>
 <div class="section level2">
-<h2 id="concept">Concept<a class="anchor" aria-label="anchor" href="#concept"></a>
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Normalization is a critical step in miRNA-seq analysis to correct for differences in library size and sequencing depth between samples.<br>
-While advanced methods (e.g., DESeq2, TMM, RUV) handle composition biases, <strong>RPM normalization</strong> remains an essential and transparent approach for exploratory analyses and publication-ready summaries.</p>
-<p>RPM normalization rescales each sample by its total read count, expressed in millions, using:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>P</mi><msub><mi>M</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mfrac><mrow><mi>c</mi><mi>o</mi><mi>u</mi><mi>n</mi><mi>t</mi><msub><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><mrow><munder><mo>∑</mo><mi>i</mi></munder><mi>c</mi><mi>o</mi><mi>u</mi><mi>n</mi><mi>t</mi><msub><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow></mfrac><mo>×</mo><msup><mn>10</mn><mn>6</mn></msup></mrow><annotation encoding="application/x-tex">
-RPM_{ij} = \frac{counts_{ij}}{\sum_i counts_{ij}} \times 10^6
-</annotation></semantics></math></p>
-<p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mi>o</mi><mi>u</mi><mi>n</mi><mi>t</mi><msub><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">counts_{ij}</annotation></semantics></math> is the raw count for miRNA <em>i</em> in sample <em>j</em>.</p>
-<hr>
+<p>Install the development version from GitHub with <code>pak</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"sergio30po/miRPM"</span><span class="op">)</span></span></code></pre></div>
+<p>Alternatively, use <code>remotes</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"sergio30po/miRPM"</span><span class="op">)</span></span></code></pre></div>
+<p>Load the package:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://sergio30po.github.io/miRPM/">miRPM</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="functionality">Functionality<a class="anchor" aria-label="anchor" href="#functionality"></a>
+<h2 id="core-functions">Core functions<a class="anchor" aria-label="anchor" href="#core-functions"></a>
 </h2>
-<p>miRPM provides simple, modular functions for different stages of the normalization and exploration workflow:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -80,51 +95,227 @@ RPM_{ij} = \frac{counts_{ij}}{\sum_i counts_{ij}} \times 10^6
 </colgroup>
 <thead><tr>
 <th>Function</th>
-<th>Description</th>
+<th>Purpose</th>
 </tr></thead>
 <tbody>
 <tr>
 <td><code><a href="reference/normalize_rpm.html">normalize_rpm()</a></code></td>
-<td>Performs RPM normalization on a count matrix.</td>
+<td>Normalize a complete count matrix using column sums or externally supplied library sizes.</td>
 </tr>
 <tr>
 <td><code><a href="reference/filter_mirnas.html">filter_mirnas()</a></code></td>
-<td>Removes low-abundance miRNAs based on count thresholds.</td>
-</tr>
-<tr>
-<td><code><a href="reference/miRNA_expression_plot.html">miRNA_expression_plot()</a></code></td>
-<td>Visualizes normalized miRNA expression distributions.</td>
-</tr>
-<tr>
-<td><code><a href="reference/individual_miRNA_plot.html">individual_miRNA_plot()</a></code></td>
-<td>Displays the expression pattern of a single miRNA across conditions.</td>
+<td>Filter miRNAs by RPM abundance, raw-count support, prevalence and group-specific criteria.</td>
 </tr>
 <tr>
 <td><code><a href="reference/perform_statistical_tests.html">perform_statistical_tests()</a></code></td>
-<td>Conducts non-parametric statistical tests (e.g., Kruskal–Wallis, Dunn).</td>
+<td>Run Mann-Whitney-Wilcoxon or Kruskal-Wallis/Dunn analyses with FDR correction and effect sizes.</td>
+</tr>
+<tr>
+<td><code><a href="reference/miRNA_expression_plot.html">miRNA_expression_plot()</a></code></td>
+<td>Create a joint static and interactive expression plot for selected miRNAs.</td>
+</tr>
+<tr>
+<td><code><a href="reference/individual_miRNA_plot.html">individual_miRNA_plot()</a></code></td>
+<td>Create one static expression plot per selected miRNA, with optional PNG export.</td>
 </tr>
 </tbody>
 </table>
-<hr>
 </div>
 <div class="section level2">
-<h2 id="metrics-and-interpretation">Metrics and Interpretation<a class="anchor" aria-label="anchor" href="#metrics-and-interpretation"></a>
+<h2 id="minimal-workflow">Minimal workflow<a class="anchor" aria-label="anchor" href="#minimal-workflow"></a>
 </h2>
-<p>RPM normalization is not a statistical model—it is a <strong>scaling method</strong>.<br>
-Its value lies in interpretability and consistency, especially for small to medium sample sizes or visualization purposes.</p>
-<p>In practice, you can evaluate the normalization by: - Inspecting overall expression distributions before and after normalization.<br>
-- Assessing whether sample-specific sequencing depth bias has been removed.<br>
-- Comparing normalized values across experimental groups.</p>
-<hr>
+<div class="section level3">
+<h3 id="example-data">Example data<a class="anchor" aria-label="anchor" href="#example-data"></a>
+</h3>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fl">120</span>, <span class="fl">140</span>, <span class="fl">900</span>, <span class="fl">980</span>,</span>
+<span>    <span class="fl">50</span>,  <span class="fl">60</span>,  <span class="fl">55</span>,  <span class="fl">65</span>,</span>
+<span>    <span class="fl">5</span>,   <span class="fl">0</span>,   <span class="fl">4</span>,   <span class="fl">1</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  nrow <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  byrow <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"miR-1"</span>, <span class="st">"miR-2"</span>, <span class="st">"miR-3"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"S1"</span>, <span class="st">"S2"</span>, <span class="st">"S3"</span>, <span class="st">"S4"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  Sample <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"S3"</span>, <span class="st">"S1"</span>, <span class="st">"S4"</span>, <span class="st">"S2"</span><span class="op">)</span>,</span>
+<span>  Condition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Disease"</span>, <span class="st">"Control"</span>, <span class="st">"Disease"</span>, <span class="st">"Control"</span><span class="op">)</span>,</span>
+<span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_1-normalize-to-rpm">1. Normalize to RPM<a class="anchor" aria-label="anchor" href="#id_1-normalize-to-rpm"></a>
+</h3>
+<p>By default, <code><a href="reference/normalize_rpm.html">normalize_rpm()</a></code> uses the complete column sums of the input matrix as library sizes.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">rpm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/normalize_rpm.html">normalize_rpm</a></span><span class="op">(</span><span class="va">counts</span><span class="op">)</span></span>
+<span><span class="va">rpm</span></span></code></pre></div>
+<p>Externally calculated library sizes can also be supplied as a named vector:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">library_sizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  S1 <span class="op">=</span> <span class="fl">2.1e6</span>,</span>
+<span>  S2 <span class="op">=</span> <span class="fl">2.3e6</span>,</span>
+<span>  S3 <span class="op">=</span> <span class="fl">1.9e6</span>,</span>
+<span>  S4 <span class="op">=</span> <span class="fl">2.0e6</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">rpm_external</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/normalize_rpm.html">normalize_rpm</a></span><span class="op">(</span></span>
+<span>  count_matrix <span class="op">=</span> <span class="va">counts</span>,</span>
+<span>  library_sizes <span class="op">=</span> <span class="va">library_sizes</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Normalization metadata are stored with the returned matrix:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">rpm</span>, <span class="st">"miRPM_normalization"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_2-filter-mirnas">2. Filter miRNAs<a class="anchor" aria-label="anchor" href="#id_2-filter-mirnas"></a>
+</h3>
+<p>The example below retains miRNAs reaching at least 5 RPM in at least 50% of samples from any group. A minimum raw-count criterion is also applied.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/filter_mirnas.html">filter_mirnas</a></span><span class="op">(</span></span>
+<span>  rpm_matrix <span class="op">=</span> <span class="va">rpm</span>,</span>
+<span>  metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
+<span>  count_matrix <span class="op">=</span> <span class="va">counts</span>,</span>
+<span>  min_rpm <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  min_count <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  min_prevalence <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  min_samples <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  group_column <span class="op">=</span> <span class="st">"Condition"</span>,</span>
+<span>  prevalence_scope <span class="op">=</span> <span class="st">"any_group"</span>,</span>
+<span>  return_diagnostics <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">filtered</span><span class="op">$</span><span class="va">filtered_matrix</span></span>
+<span><span class="va">filtered</span><span class="op">$</span><span class="va">summary</span></span>
+<span><span class="va">filtered</span><span class="op">$</span><span class="va">diagnostics</span></span></code></pre></div>
+<p>Filtering thresholds are study-dependent and should be selected before testing, justified biologically and evaluated through sensitivity analyses.</p>
+</div>
+<div class="section level3">
+<h3 id="id_3-analyze-group-differences">3. Analyze group differences<a class="anchor" aria-label="anchor" href="#id_3-analyze-group-differences"></a>
+</h3>
+<p>For two independent groups, <code><a href="reference/perform_statistical_tests.html">perform_statistical_tests()</a></code> uses the Mann-Whitney-Wilcoxon rank-sum test.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">de_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/perform_statistical_tests.html">perform_statistical_tests</a></span><span class="op">(</span></span>
+<span>  miRNA_ftd <span class="op">=</span> <span class="va">filtered</span><span class="op">$</span><span class="va">filtered_matrix</span>,</span>
+<span>  metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
+<span>  condition <span class="op">=</span> <span class="st">"Condition"</span>,</span>
+<span>  group_order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Control"</span>, <span class="st">"Disease"</span><span class="op">)</span>,</span>
+<span>  output_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  assign_results <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">de_result</span><span class="op">$</span><span class="va">results</span></span>
+<span><span class="va">de_result</span><span class="op">$</span><span class="va">significant_results</span></span></code></pre></div>
+<p>The returned results include:</p>
+<ul>
+<li>Raw and adjusted p-values.</li>
+<li>Group-specific descriptive statistics.</li>
+<li>Detection prevalence.</li>
+<li>Rank-biserial correlation.</li>
+<li>Probability of superiority.</li>
+<li>Mean and median differences.</li>
+<li>A descriptive log2 median ratio.</li>
+</ul>
+<p>For three or more groups, the same function uses Kruskal-Wallis tests and can generate Dunn post-hoc comparisons.</p>
+</div>
+<div class="section level3">
+<h3 id="id_4-create-a-joint-interactive-plot">4. Create a joint interactive plot<a class="anchor" aria-label="anchor" href="#id_4-create-a-joint-interactive-plot"></a>
+</h3>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">joint_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/miRNA_expression_plot.html">miRNA_expression_plot</a></span><span class="op">(</span></span>
+<span>  mirnas <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">filtered</span><span class="op">$</span><span class="va">filtered_matrix</span><span class="op">)</span>,</span>
+<span>  rpm_matrix <span class="op">=</span> <span class="va">filtered</span><span class="op">$</span><span class="va">filtered_matrix</span>,</span>
+<span>  metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
+<span>  condition_column <span class="op">=</span> <span class="st">"Condition"</span>,</span>
+<span>  sample_column <span class="op">=</span> <span class="st">"Sample"</span>,</span>
+<span>  groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Control"</span>, <span class="st">"Disease"</span><span class="op">)</span>,</span>
+<span>  save_html <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">joint_plot</span><span class="op">$</span><span class="va">ggplot</span></span>
+<span><span class="va">joint_plot</span><span class="op">$</span><span class="va">plotly</span></span></code></pre></div>
+<p>To save the interactive plot:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">joint_plot_saved</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/miRNA_expression_plot.html">miRNA_expression_plot</a></span><span class="op">(</span></span>
+<span>  mirnas <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">filtered</span><span class="op">$</span><span class="va">filtered_matrix</span><span class="op">)</span>,</span>
+<span>  rpm_matrix <span class="op">=</span> <span class="va">filtered</span><span class="op">$</span><span class="va">filtered_matrix</span>,</span>
+<span>  metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
+<span>  condition_column <span class="op">=</span> <span class="st">"Condition"</span>,</span>
+<span>  groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Control"</span>, <span class="st">"Disease"</span><span class="op">)</span>,</span>
+<span>  output_name <span class="op">=</span> <span class="st">"miRNA-expression"</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"Interactive_plots"</span>,</span>
+<span>  save_html <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_5-create-individual-mirna-plots">5. Create individual miRNA plots<a class="anchor" aria-label="anchor" href="#id_5-create-individual-mirna-plots"></a>
+</h3>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">individual_plots</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/individual_miRNA_plot.html">individual_miRNA_plot</a></span><span class="op">(</span></span>
+<span>  filtered_results <span class="op">=</span> <span class="va">de_result</span><span class="op">$</span><span class="va">results</span>,</span>
+<span>  rpm_matrix <span class="op">=</span> <span class="va">filtered</span><span class="op">$</span><span class="va">filtered_matrix</span>,</span>
+<span>  metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
+<span>  condition_column <span class="op">=</span> <span class="st">"Condition"</span>,</span>
+<span>  sample_column <span class="op">=</span> <span class="st">"Sample"</span>,</span>
+<span>  groups_to_include <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Control"</span>, <span class="st">"Disease"</span><span class="op">)</span>,</span>
+<span>  adjusted_pvalue_column <span class="op">=</span> <span class="st">"FDR"</span>,</span>
+<span>  save_png <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">individual_plots</span><span class="op">$</span><span class="va">plots</span></span></code></pre></div>
+<p>Individual PNG files can be generated with <code>save_png = TRUE</code>.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="installation-and-usage">Installation and Usage<a class="anchor" aria-label="anchor" href="#installation-and-usage"></a>
+<h2 id="statistical-interpretation">Statistical interpretation<a class="anchor" aria-label="anchor" href="#statistical-interpretation"></a>
 </h2>
-<p>You can install the development version directly from GitHub using <strong>remotes</strong>:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"sergio30po/miRPM"</span><span class="op">)</span></span></code></pre></div>
-<p>Please refer to the <a href="https://sergio30po.github.io/miRPM" class="external-link">documentation page</a> for detailed function references.</p>
+<p>A small adjusted p-value alone should not define biological relevance. Interpretation should also consider:</p>
+<ul>
+<li>Effect-size magnitude and direction.</li>
+<li>Expression abundance.</li>
+<li>Detection prevalence.</li>
+<li>Consistency across samples.</li>
+<li>Group imbalance and zero inflation.</li>
+<li>Sensitivity to filtering and normalization choices.</li>
+<li>Replication in independent datasets.</li>
+</ul>
+<p>The Wilcoxon rank-sum test evaluates differences in rank distributions. It should not be described simply as a test of medians unless additional distributional assumptions are satisfied.</p>
+</div>
+<div class="section level2">
+<h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>
+</h2>
+<p>The package currently includes:</p>
+<ul>
+<li>Automated tests for all exported functions.</li>
+<li>Local <code>R CMD check</code> validation.</li>
+<li>Multi-platform GitHub Actions checks on Linux, Windows and macOS.</li>
+<li>A pkgdown workflow for automated website deployment.</li>
+</ul>
+<p>Record the package version and R session used for each analysis:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">packageVersion</a></span><span class="op">(</span><span class="st">"miRPM"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
+</h2>
+<p>Full function documentation and examples are available at:</p>
+<p><a href="https://sergio30po.github.io/miRPM/" class="uri">https://sergio30po.github.io/miRPM/</a></p>
+</div>
+<div class="section level2">
+<h2 id="development-status">Development status<a class="anchor" aria-label="anchor" href="#development-status"></a>
+</h2>
+<p>The current development version is preparing <code>miRPM</code> 0.2.0. The API retains compatibility with the original 0.1.0 interfaces where practical, while new code should use the named arguments documented in the current function references.</p>
+</div>
+<div class="section level2">
+<h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
+</h2>
+<p><code>miRPM</code> is released under the MIT License.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -160,7 +351,14 @@ Its value lies in interpretability and consistency, especially for small to medi
 </ul>
 </div>
 
-
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/sergio30po/miRPM/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/sergio30po/miRPM/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://github.com/sergio30po/miRPM/actions/workflows/pkgdown.yaml" class="external-link"><img src="https://github.com/sergio30po/miRPM/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
+<li><a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></li>
+</ul>
+</div>
 
   </aside>
 </div>

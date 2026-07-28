@@ -1,15 +1,15 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
-<url><loc>/404.html</loc></url>
-<url><loc>/LICENSE-text.html</loc></url>
-<url><loc>/LICENSE.html</loc></url>
-<url><loc>/authors.html</loc></url>
-<url><loc>/index.html</loc></url>
-<url><loc>/reference/filter_mirnas.html</loc></url>
-<url><loc>/reference/index.html</loc></url>
-<url><loc>/reference/individual_miRNA_plot.html</loc></url>
-<url><loc>/reference/miRNA_expression_plot.html</loc></url>
-<url><loc>/reference/miRPM-package.html</loc></url>
-<url><loc>/reference/normalize_rpm.html</loc></url>
-<url><loc>/reference/perform_statistical_tests.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/404.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/LICENSE-text.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/LICENSE.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/authors.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/index.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/reference/filter_mirnas.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/reference/index.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/reference/individual_miRNA_plot.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/reference/miRNA_expression_plot.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/reference/miRPM-package.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/reference/normalize_rpm.html</loc></url>
+<url><loc>https://sergio30po.github.io/miRPM/reference/perform_statistical_tests.html</loc></url>
 </urlset>
 
