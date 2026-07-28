@@ -1,38 +1,103 @@
-# Normalize a count matrix to RPM without scientific notation
+# Normalize a count matrix to reads per million
 
-This function normalizes a count matrix to Reads Per Million (RPM) using
-the total reads per sample. The resulting matrix is rounded to 2 decimal
-places and avoids scientific notation.
+Converts a complete count matrix to reads per million (RPM) using the
+library size of each sample.
 
 ## Usage
 
 ``` r
-normalize_rpm(count_matrix, metrics, reads_column)
+normalize_rpm(
+  count_matrix,
+  metrics = NULL,
+  reads_column = NULL,
+  library_sizes = NULL
+)
 ```
 
 ## Arguments
 
 - count_matrix:
 
-  A count matrix (genes in rows, samples in columns).
+  A numeric matrix or data frame with features in rows and samples in
+  columns.
 
 - metrics:
 
-  A dataframe containing sample information, including total reads.
+  Deprecated. A data frame containing a \`Sample\` column and the
+  library-size column indicated by \`reads_column\`.
 
 - reads_column:
 
-  The name of the column in metrics that contains the total reads.
+  Deprecated. Name of the library-size column in \`metrics\`.
+
+- library_sizes:
+
+  Optional named numeric vector containing one positive library size per
+  sample. Names must match the column names of \`count_matrix\`.
 
 ## Value
 
-A normalized matrix in RPM without scientific notation.
+A numeric matrix with the same dimensions and dimnames as
+\`count_matrix\`. The \`"miRPM_normalization"\` attribute records the
+normalization method, library sizes, their source and reads per RPM.
+
+## Details
+
+When \`library_sizes\` is \`NULL\`, library sizes are calculated from
+the complete input matrix using \`colSums(count_matrix)\`.
+
+Normalization should therefore be performed before filtering miRNAs.
+Applying the function to an already filtered matrix changes the
+denominator and the biological meaning of the resulting RPM values.
+
+The deprecated \`metrics\` and \`reads_column\` arguments are retained
+temporarily for compatibility with miRPM 0.1.0 pipelines.
+
+The returned matrix stores normalization information in the
+\`"miRPM_normalization"\` attribute. This includes the library sizes,
+their source and the approximate number of reads represented by one RPM
+in each sample.
 
 ## Examples
 
 ``` r
-# Example usage:
-# count_matrix <- matrix(c(100, 200, 300, 400), nrow = 2, dimnames = list(c("Gene1", "Gene2"), c("Sample1", "Sample2")))
-# metrics <- data.frame(Sample = c("Sample1", "Sample2"), TotalReads = c(1000, 2000))
-# rpm_matrix <- normalize_rpm(count_matrix, metrics, "TotalReads")
+count_matrix <- matrix(
+  c(100, 200, 300, 400),
+  nrow = 2,
+  dimnames = list(
+    c("miR-1", "miR-2"),
+    c("Sample1", "Sample2")
+  )
+)
+
+rpm_matrix <- normalize_rpm(count_matrix)
+
+colSums(rpm_matrix)
+#> Sample1 Sample2 
+#>   1e+06   1e+06 
+
+attr(rpm_matrix, "miRPM_normalization")
+#> $method
+#> [1] "RPM"
+#> 
+#> $scale
+#> [1] 1e+06
+#> 
+#> $library_sizes
+#> Sample1 Sample2 
+#>     300     700 
+#> 
+#> $reads_per_rpm
+#> Sample1 Sample2 
+#>   3e-04   7e-04 
+#> 
+#> $library_size_source
+#> [1] "matrix_column_sums"
+#> 
+#> $input_features
+#> [1] 2
+#> 
+#> $input_samples
+#> [1] 2
+#> 
 ```
