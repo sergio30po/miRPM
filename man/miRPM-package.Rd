@@ -15,7 +15,7 @@ miRNA-seq count matrices using reads per million (RPM) normalization.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://sergio30po.github.io/miRPM}
+  \item \url{https://sergio30po.github.io/miRPM/}
   \item \url{https://github.com/sergio30po/miRPM}
   \item Report bugs at \url{https://github.com/sergio30po/miRPM/issues}
 }
