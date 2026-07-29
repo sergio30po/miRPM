@@ -1,0 +1,281 @@
+---
+title: "miRPM Workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{miRPM Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Overview
+
+`miRPM` provides a transparent workflow for exploratory analysis of
+miRNA-seq count matrices using reads per million (RPM) normalization.
+
+The workflow includes:
+
+1. RPM normalization.
+2. Abundance and prevalence filtering.
+3. Nonparametric group comparisons.
+4. Static and interactive expression plots.
+
+RPM is an abundance-scaling method. It does not replace count-based
+differential-expression models such as DESeq2, edgeR, or limma-voom
+when modelling complex experimental designs, composition bias, or
+count-dependent variance is required.
+
+## Load the package and example data
+
+```{r load-package}
+library(miRPM)
+
+data("miRPM_example", package = "miRPM")
+
+counts <- miRPM_example$counts
+metadata <- miRPM_example$metadata
+```
+
+The example dataset is synthetic and is intended only for
+documentation and testing.
+
+```{r inspect-data}
+dim(counts)
+head(counts)
+metadata
+```
+
+The count matrix must contain miRNAs in rows and samples in columns.
+
+```{r validate-alignment}
+stopifnot(
+  identical(colnames(counts), metadata$Sample),
+  all(counts >= 0),
+  all(is.finite(counts))
+)
+```
+
+## Normalize counts to RPM
+
+By default, `normalize_rpm()` calculates each library size from the
+complete column sum of the input count matrix.
+
+```{r normalize}
+rpm <- normalize_rpm(counts)
+
+dim(rpm)
+round(rpm[, 1:4], 2)
+```
+
+The returned matrix contains normalization metadata.
+
+```{r normalization-metadata}
+attr(rpm, "miRPM_normalization")
+```
+
+Externally calculated library sizes can also be supplied as a named
+vector.
+
+```{r external-library-sizes}
+library_sizes <- setNames(
+  c(
+    2.1e6, 2.3e6, 2.0e6, 2.2e6,
+    1.9e6, 2.4e6, 2.1e6, 2.0e6
+  ),
+  colnames(counts)
+)
+
+rpm_external <- normalize_rpm(
+  count_matrix = counts,
+  library_sizes = library_sizes
+)
+
+dim(rpm_external)
+```
+
+## Filter low-information miRNAs
+
+Filtering can combine:
+
+- Minimum RPM abundance.
+- Minimum raw count.
+- Minimum prevalence.
+- Minimum number of qualifying samples.
+- Group-specific prevalence requirements.
+
+The following example retains miRNAs satisfying the criteria in at
+least one experimental group.
+
+```{r filter}
+filtered <- filter_mirnas(
+  rpm_matrix = rpm,
+  metadata = metadata,
+  raw_counts = counts,
+  min_rpm = 5,
+  min_count = 10,
+  min_prevalence = 0.5,
+  min_samples = 2,
+  group_column = "Condition",
+  prevalence_scope = "any_group",
+  return_diagnostics = TRUE
+)
+
+filtered$summary
+```
+
+The filtered RPM matrix is available in
+`filtered$filtered_matrix`.
+
+```{r inspect-filtered}
+rownames(filtered$filtered_matrix)
+dim(filtered$filtered_matrix)
+```
+
+Detailed filtering information is available for each miRNA.
+
+```{r filtering-diagnostics}
+filtered$diagnostics
+```
+
+Filtering thresholds should be chosen according to sequencing depth,
+sample size, biological context, and the intended downstream analysis.
+They should not be interpreted as universal detection thresholds.
+
+## Perform nonparametric group comparisons
+
+`perform_statistical_tests()` analyzes the filtered RPM matrix using
+nonparametric methods.
+
+For two independent groups, the function performs a Wilcoxon rank-sum
+test. For more than two groups, it performs a Kruskal-Wallis test and
+can calculate Dunn post-hoc comparisons.
+
+```{r statistical-analysis}
+de_result <- perform_statistical_tests(
+  miRNA_ftd = filtered$filtered_matrix,
+  metadata = metadata,
+  condition = "Condition",
+  group_order = c("Control", "Disease"),
+  output_file = NULL,
+  assign_results = FALSE,
+  write_excel = FALSE
+)
+```
+
+The complete result table includes raw and adjusted p-values together
+with descriptive and effect-size information.
+
+```{r statistical-results}
+de_result$results
+```
+
+Results passing the selected significance threshold are stored
+separately.
+
+```{r significant-results}
+de_result$significant_results
+```
+
+Adjusted p-values control the false discovery rate across the tested
+miRNAs. Statistical significance should be interpreted together with
+effect size, abundance, prevalence, consistency, and study design.
+
+## Create a joint expression plot
+
+`miRNA_expression_plot()` returns both a static `ggplot2` object and an
+interactive `plotly` object.
+
+```{r joint-plot}
+joint_plot <- miRNA_expression_plot(
+  mirnas = rownames(filtered$filtered_matrix),
+  rpm_matrix = filtered$filtered_matrix,
+  metadata = metadata,
+  condition_column = "Condition",
+  sample_column = "Sample",
+  groups = c("Control", "Disease"),
+  save_html = FALSE
+)
+
+joint_plot$ggplot
+```
+
+The interactive object is available as:
+
+```{r interactive-object}
+class(joint_plot$interactive)
+```
+
+It can be displayed interactively in an RStudio viewer, R Markdown
+document, or compatible HTML environment.
+
+## Create individual miRNA plots
+
+`individual_miRNA_plot()` creates one static plot for each selected
+miRNA.
+
+```{r individual-plots}
+individual_plots <- individual_miRNA_plot(
+  filtered_results = de_result$results,
+  rpm_matrix = filtered$filtered_matrix,
+  metadata = metadata,
+  condition_column = "Condition",
+  sample_column = "Sample",
+  groups_to_include = c("Control", "Disease"),
+  adjusted_pvalue_column = "FDR",
+  save_png = FALSE
+)
+
+length(individual_plots$plots)
+```
+
+Display the first plot:
+
+```{r first-individual-plot}
+individual_plots$plots[[1]]
+```
+
+The returned object also reports selected miRNAs, missing miRNAs,
+adjusted p-values, data used for plotting, and any files written to
+disk.
+
+```{r individual-output}
+names(individual_plots)
+individual_plots$adjusted_pvalues
+```
+
+## Reproducible workflow summary
+
+A typical `miRPM` analysis follows this order:
+
+```{r workflow-summary, eval=FALSE}
+rpm <- normalize_rpm(counts)
+
+filtered <- filter_mirnas(
+  rpm_matrix = rpm,
+  metadata = metadata,
+  raw_counts = counts,
+  group_column = "Condition",
+  prevalence_scope = "any_group",
+  return_diagnostics = TRUE
+)
+
+results <- perform_statistical_tests(
+  miRNA_ftd = filtered$filtered_matrix,
+  metadata = metadata,
+  condition = "Condition",
+  assign_results = FALSE,
+  write_excel = FALSE
+)
+```
+
+Normalization should be performed before filtering so that library
+sizes are calculated from the complete count matrix unless valid
+external library sizes are supplied.

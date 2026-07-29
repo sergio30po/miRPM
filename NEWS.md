@@ -1,4 +1,4 @@
-# miRPM (development version)
+# miRPM 0.2.0
 
 ## Package structure and reproducibility
 
