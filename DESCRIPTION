@@ -1,22 +1,30 @@
 Package: miRPM
-Title: miRNA RPM Normalization
+Title: miRNA-Seq RPM Normalization, Filtering, and Analysis
 Version: 0.1.0.9000
 Authors@R: c(
-    person("Sergio", "Pérez Oliveira",
-           email = "sergio30po@gmail.com",
-           role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-3292-0501")),
-    person("Manuel", "Fernández Sanjurjo",
-           email = "fernandezsanmanuel@uniovi.es",
-           role = "aut",
-           comment = c(ORCID = "0000-0003-4687-3379")),
-    person("Eduardo", "Iglesias Gutierrez",
-           email = "iglesiaseduardo@uniovi.es",
-           role = "aut",
-           comment = c(ORCID = "0000-0002-3063-1562"))
+    person(
+        "Sergio", "Pérez Oliveira",
+        email = "sergio30po@gmail.com",
+        role = c("aut", "cre"),
+        comment = c(ORCID = "0000-0002-3292-0501")
+    ),
+    person(
+        "Manuel", "Fernández Sanjurjo",
+        email = "fernandezsanmanuel@uniovi.es",
+        role = "aut",
+        comment = c(ORCID = "0000-0003-4687-3379")
+    ),
+    person(
+        "Eduardo", "Iglesias Gutierrez",
+        email = "iglesiaseduardo@uniovi.es",
+        role = "aut",
+        comment = c(ORCID = "0000-0002-3063-1562")
     )
-Description: Lightweight tools to explore, normalize, and analyze miRNA-seq count
-    matrices using reads per million (RPM) normalization.
+    )
+Description: Provides lightweight tools to normalize miRNA-seq count matrices
+    using reads per million (RPM), filter miRNAs by abundance and prevalence,
+    perform nonparametric group comparisons with multiple-testing correction,
+    and generate static and interactive expression plots.
 Depends:
     R (>= 4.0)
 License: MIT + file LICENSE
