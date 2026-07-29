@@ -14,7 +14,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/sergio30po/miRPM/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/sergio30po/miRPM/blob/v0.2.0/DESCRIPTION)
 
 Pérez Oliveira S, Fernández Sanjurjo M, Iglesias Gutierrez E (2026).
 *miRPM: miRNA-Seq RPM Normalization, Filtering, and Analysis*. R package

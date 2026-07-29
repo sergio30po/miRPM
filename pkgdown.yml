@@ -3,7 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   miRPM-workflow: miRPM-workflow.html
-last_built: 2026-07-29T18:18Z
+last_built: 2026-07-29T18:28Z
 urls:
   reference: https://sergio30po.github.io/miRPM/reference
   article: https://sergio30po.github.io/miRPM/articles
