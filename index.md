@@ -292,12 +292,11 @@ Full function documentation and examples are available at:
 
 <https://sergio30po.github.io/miRPM/>
 
-## Development status
+## Release status
 
-The current development version is preparing `miRPM` 0.2.0. The API
-retains compatibility with the original 0.1.0 interfaces where
-practical, while new code should use the named arguments documented in
-the current function references.
+The current release is `miRPM` 0.2.0. The API retains compatibility with
+the original 0.1.0 interfaces where practical, while new code should use
+the named arguments documented in the current function references.
 
 ## License
 
