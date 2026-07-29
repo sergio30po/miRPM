@@ -8,6 +8,7 @@ navbar:
     left:
       - home
       - reference
+      - news
       - license
     right:
       - search
