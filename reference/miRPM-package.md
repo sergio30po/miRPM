@@ -13,7 +13,7 @@ normalization.
 
 Useful links:
 
-- <https://sergio30po.github.io/miRPM>
+- <https://sergio30po.github.io/miRPM/>
 
 - <https://github.com/sergio30po/miRPM>
 

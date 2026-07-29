@@ -11,6 +11,8 @@
 - [`miRPM`](https://sergio30po.github.io/miRPM/reference/miRPM-package.md)
   [`miRPM-package`](https://sergio30po.github.io/miRPM/reference/miRPM-package.md)
   : miRPM: miRNA RPM Normalization
+- [`miRPM_example`](https://sergio30po.github.io/miRPM/reference/miRPM_example.md)
+  : Synthetic miRNA-Seq Example Data
 - [`normalize_rpm()`](https://sergio30po.github.io/miRPM/reference/normalize_rpm.md)
   : Normalize a count matrix to reads per million
 - [`perform_statistical_tests()`](https://sergio30po.github.io/miRPM/reference/perform_statistical_tests.md)

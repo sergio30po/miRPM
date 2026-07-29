@@ -17,11 +17,11 @@ Source:
 [`DESCRIPTION`](https://github.com/sergio30po/miRPM/blob/main/DESCRIPTION)
 
 Pérez Oliveira S, Fernández Sanjurjo M, Iglesias Gutierrez E (2026).
-*miRPM: miRNA RPM Normalization*. R package version 0.1.0.9000,
-<https://sergio30po.github.io/miRPM/>.
+*miRPM: miRNA-Seq RPM Normalization, Filtering, and Analysis*. R package
+version 0.1.0.9000, <https://sergio30po.github.io/miRPM/>.
 
     @Manual{,
-      title = {miRPM: miRNA RPM Normalization},
+      title = {miRPM: miRNA-Seq RPM Normalization, Filtering, and Analysis},
       author = {Sergio {Pérez Oliveira} and Manuel {Fernández Sanjurjo} and Eduardo {Iglesias Gutierrez}},
       year = {2026},
       note = {R package version 0.1.0.9000},

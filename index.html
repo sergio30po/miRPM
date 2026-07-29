@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>miRNA RPM Normalization • miRPM</title>
+<title>miRNA-Seq RPM Normalization, Filtering, and Analysis • miRPM</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="miRNA RPM Normalization">
-<meta name="description" content="Lightweight tools to explore, normalize, and analyze miRNA-seq count matrices using reads per million (RPM) normalization.">
-<meta property="og:description" content="Lightweight tools to explore, normalize, and analyze miRNA-seq count matrices using reads per million (RPM) normalization.">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="miRNA-Seq RPM Normalization, Filtering, and Analysis">
+<meta name="description" content="Provides lightweight tools to normalize miRNA-seq count matrices using reads per million (RPM), filter miRNAs by abundance and prevalence, perform nonparametric group comparisons with multiple-testing correction, and generate static and interactive expression plots.">
+<meta property="og:description" content="Provides lightweight tools to normalize miRNA-seq count matrices using reads per million (RPM), filter miRNAs by abundance and prevalence, perform nonparametric group comparisons with multiple-testing correction, and generate static and interactive expression plots.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -32,6 +32,13 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/miRPM-workflow.html">miRPM Workflow</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
 <li class="nav-item"><a class="nav-link" href="LICENSE.html">License</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -65,8 +72,13 @@
 <h2 id="scope">Scope<a class="anchor" aria-label="anchor" href="#scope"></a>
 </h2>
 <p>RPM normalization rescales each sample by its sequencing depth:</p>
-<p>[ <em>{ij} =  {</em>{j}} ^6 ]</p>
-<p>where (i) identifies a miRNA and (j) identifies a sample.</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mrow><mi mathvariant="normal">R</mi><mi mathvariant="normal">P</mi><mi mathvariant="normal">M</mi></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mfrac><msub><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">b</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">y</mi><mspace width="0.222em"></mspace><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">z</mi><mi mathvariant="normal">e</mi></mrow><mi>j</mi></msub></mfrac><mo>×</mo><msup><mn>10</mn><mn>6</mn></msup></mrow><annotation encoding="application/x-tex">
+\mathrm{RPM}_{ij} =
+\frac{\mathrm{count}_{ij}}
+{\mathrm{library\ size}_{j}}
+\times 10^6
+</annotation></semantics></math></p>
+<p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math> identifies a miRNA and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math> identifies a sample.</p>
 <p>RPM is a transparent scaling method, not a count-based statistical model. It is useful for exploratory analysis, visualization and workflows in which normalized abundance has a direct interpretation.</p>
 <p>For confirmatory differential-expression analyses, results should be benchmarked against established count-based methods such as DESeq2, edgeR or limma-voom, particularly when composition bias, complex designs or strong mean-variance relationships are expected.</p>
 </div>
@@ -127,26 +139,20 @@
 <div class="section level3">
 <h3 id="example-data">Example data<a class="anchor" aria-label="anchor" href="#example-data"></a>
 </h3>
+<p><code>miRPM</code> includes a small synthetic dataset for reproducible examples. It contains six miRNAs measured in eight samples divided into two groups.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="fl">120</span>, <span class="fl">140</span>, <span class="fl">900</span>, <span class="fl">980</span>,</span>
-<span>    <span class="fl">50</span>,  <span class="fl">60</span>,  <span class="fl">55</span>,  <span class="fl">65</span>,</span>
-<span>    <span class="fl">5</span>,   <span class="fl">0</span>,   <span class="fl">4</span>,   <span class="fl">1</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  nrow <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  byrow <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"miR-1"</span>, <span class="st">"miR-2"</span>, <span class="st">"miR-3"</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"S1"</span>, <span class="st">"S2"</span>, <span class="st">"S3"</span>, <span class="st">"S4"</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"miRPM_example"</span>, package <span class="op">=</span> <span class="st">"miRPM"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  Sample <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"S3"</span>, <span class="st">"S1"</span>, <span class="st">"S4"</span>, <span class="st">"S2"</span><span class="op">)</span>,</span>
-<span>  Condition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Disease"</span>, <span class="st">"Control"</span>, <span class="st">"Disease"</span>, <span class="st">"Control"</span><span class="op">)</span>,</span>
-<span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="va">counts</span> <span class="op">&lt;-</span> <span class="va">miRPM_example</span><span class="op">$</span><span class="va">counts</span></span>
+<span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="va">miRPM_example</span><span class="op">$</span><span class="va">metadata</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">counts</span><span class="op">)</span></span>
+<span><span class="va">metadata</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">counts</span><span class="op">)</span>, <span class="va">metadata</span><span class="op">$</span><span class="va">Sample</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>The count matrix must contain miRNAs in rows and samples in columns. Sample identifiers in <code>colnames(counts)</code> must correspond to the values in <code>metadata$Sample</code>.</p>
 </div>
 <div class="section level3">
 <h3 id="id_1-normalize-to-rpm">1. Normalize to RPM<a class="anchor" aria-label="anchor" href="#id_1-normalize-to-rpm"></a>
@@ -157,11 +163,12 @@
 <span><span class="va">rpm</span></span></code></pre></div>
 <p>Externally calculated library sizes can also be supplied as a named vector:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">library_sizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  S1 <span class="op">=</span> <span class="fl">2.1e6</span>,</span>
-<span>  S2 <span class="op">=</span> <span class="fl">2.3e6</span>,</span>
-<span>  S3 <span class="op">=</span> <span class="fl">1.9e6</span>,</span>
-<span>  S4 <span class="op">=</span> <span class="fl">2.0e6</span></span>
+<code class="sourceCode R"><span><span class="va">library_sizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fl">2.1e6</span>, <span class="fl">2.3e6</span>, <span class="fl">2.0e6</span>, <span class="fl">2.2e6</span>,</span>
+<span>    <span class="fl">1.9e6</span>, <span class="fl">2.4e6</span>, <span class="fl">2.1e6</span>, <span class="fl">2.0e6</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">counts</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">rpm_external</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/normalize_rpm.html">normalize_rpm</a></span><span class="op">(</span></span>
@@ -180,7 +187,7 @@
 <code class="sourceCode R"><span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/filter_mirnas.html">filter_mirnas</a></span><span class="op">(</span></span>
 <span>  rpm_matrix <span class="op">=</span> <span class="va">rpm</span>,</span>
 <span>  metadata <span class="op">=</span> <span class="va">metadata</span>,</span>
-<span>  count_matrix <span class="op">=</span> <span class="va">counts</span>,</span>
+<span>  raw_counts <span class="op">=</span> <span class="va">counts</span>,</span>
 <span>  min_rpm <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  min_count <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  min_prevalence <span class="op">=</span> <span class="fl">0.5</span>,</span>
@@ -238,7 +245,7 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">joint_plot</span><span class="op">$</span><span class="va">ggplot</span></span>
-<span><span class="va">joint_plot</span><span class="op">$</span><span class="va">plotly</span></span></code></pre></div>
+<span><span class="va">joint_plot</span><span class="op">$</span><span class="va">interactive</span></span></code></pre></div>
 <p>To save the interactive plot:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">joint_plot_saved</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/miRNA_expression_plot.html">miRNA_expression_plot</a></span><span class="op">(</span></span>

@@ -17,9 +17,14 @@ The package provides a modular workflow for:
 
 RPM normalization rescales each sample by its sequencing depth:
 
-\[ *{ij} = {*{j}} ^6 \]
+``` math
+\mathrm{RPM}_{ij} =
+\frac{\mathrm{count}_{ij}}
+{\mathrm{library\ size}_{j}}
+\times 10^6
+```
 
-where (i) identifies a miRNA and (j) identifies a sample.
+where $`i`$ identifies a miRNA and $`j`$ identifies a sample.
 
 RPM is a transparent scaling method, not a count-based statistical
 model. It is useful for exploratory analysis, visualization and
@@ -69,28 +74,27 @@ library(miRPM)
 
 ### Example data
 
+`miRPM` includes a small synthetic dataset for reproducible examples. It
+contains six miRNAs measured in eight samples divided into two groups.
+
 ``` r
 
-counts <- matrix(
-  c(
-    120, 140, 900, 980,
-    50,  60,  55,  65,
-    5,   0,   4,   1
-  ),
-  nrow = 3,
-  byrow = TRUE,
-  dimnames = list(
-    c("miR-1", "miR-2", "miR-3"),
-    c("S1", "S2", "S3", "S4")
-  )
-)
+data("miRPM_example", package = "miRPM")
 
-metadata <- data.frame(
-  Sample = c("S3", "S1", "S4", "S2"),
-  Condition = c("Disease", "Control", "Disease", "Control"),
-  stringsAsFactors = FALSE
+counts <- miRPM_example$counts
+metadata <- miRPM_example$metadata
+
+dim(counts)
+metadata
+
+stopifnot(
+  identical(colnames(counts), metadata$Sample)
 )
 ```
+
+The count matrix must contain miRNAs in rows and samples in columns.
+Sample identifiers in `colnames(counts)` must correspond to the values
+in `metadata$Sample`.
 
 ### 1. Normalize to RPM
 
@@ -109,11 +113,12 @@ vector:
 
 ``` r
 
-library_sizes <- c(
-  S1 = 2.1e6,
-  S2 = 2.3e6,
-  S3 = 1.9e6,
-  S4 = 2.0e6
+library_sizes <- setNames(
+  c(
+    2.1e6, 2.3e6, 2.0e6, 2.2e6,
+    1.9e6, 2.4e6, 2.1e6, 2.0e6
+  ),
+  colnames(counts)
 )
 
 rpm_external <- normalize_rpm(
@@ -140,7 +145,7 @@ applied.
 filtered <- filter_mirnas(
   rpm_matrix = rpm,
   metadata = metadata,
-  count_matrix = counts,
+  raw_counts = counts,
   min_rpm = 5,
   min_count = 10,
   min_prevalence = 0.5,
@@ -208,7 +213,7 @@ joint_plot <- miRNA_expression_plot(
 )
 
 joint_plot$ggplot
-joint_plot$plotly
+joint_plot$interactive
 ```
 
 To save the interactive plot:
