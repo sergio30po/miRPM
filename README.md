@@ -130,7 +130,7 @@ Normalization metadata are stored with the returned matrix:
 
 ```r
 attr(rpm, "miRPM_normalization")
-# ```
+```
 
 ### 2. Filter miRNAs
 
