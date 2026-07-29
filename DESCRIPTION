@@ -1,6 +1,6 @@
 Package: miRPM
 Title: miRNA-Seq RPM Normalization, Filtering, and Analysis
-Version: 0.1.0.9000
+Version: 0.2.0
 Authors@R: c(
     person(
         "Sergio", "Pérez Oliveira",
